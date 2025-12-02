@@ -1,0 +1,41 @@
+{
+  "expo": {
+    "name": "oneQlick Partner",
+    "slug": "oneqlick-partner",
+    "version": "1.0.0",
+    "scheme": "oneqlick-partner",
+    "assetBundlePatterns": [
+      "*/"
+    ],
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "8658e03f-31d0-4c7f-9f20-5bbe8bda17c5"
+      }
+    },
+    "ios": {
+      "bundleIdentifier": "com.oneqlick.partner"
+    },
+    "android": {
+      "package": "com.oneqlick.partner",
+      "usesCleartextTraffic": true
+    },
+    "plugins": [
+      "expo-router"
+    ],
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#4F46E5"
+    }
+  }
+}
