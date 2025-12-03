@@ -1,481 +1,252 @@
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, RefreshControl, Alert, LayoutAnimation, Platform, UIManager } from 'react-native';
-import { Text, FAB, List, Switch, ActivityIndicator, Surface, Searchbar, Chip } from 'react-native-paper';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { GlobalStyles } from '../../styles/globalStyles';
-import { DesignSystem } from '../../constants/designSystem';
-import { partnerAPI } from '../../services/partnerService';
-import { FoodItem } from '../../types';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+// oneQlick/app/(tabs)/menu.tsx (Menu Management Screen - Task 7)
 
-// Enable LayoutAnimation for Android
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-    UIManager.setLayoutAnimationEnabledExperimental(true);
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Switch } from 'react-native';
+import AppHeader from '../../components/common/AppHeader';
+import { MaterialIcons } from '@expo/vector-icons';
+import { getMenuItems } from '../../utils/mock'; 
+
+// *** Data Interfaces (Should match menu_items.json structure) ***
+interface MenuItem {
+    id: string;
+    name: string;
+    price: number;
+    description: string;
+    is_available: boolean; // Checklist: Toggle availability
 }
 
-export default function MenuScreen() {
-    const [menuItems, setMenuItems] = useState<FoodItem[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [refreshing, setRefreshing] = useState(false);
-    const [togglingId, setTogglingId] = useState<string | null>(null);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+// --- Helper Component: Menu Item Row ---
+const MenuItemRow = ({ item, onToggleAvailability, onEdit }: { 
+    item: MenuItem, 
+    onToggleAvailability: (id: string, isAvailable: boolean) => void,
+    onEdit: (item: MenuItem) => void
+}) => (
+    <View style={menuStyles.card}>
+        <View style={menuStyles.infoContainer}>
+            <Text style={menuStyles.itemName}>{item.name}</Text>
+            <Text style={menuStyles.itemPrice}>${item.price.toFixed(2)}</Text>
+            <Text style={menuStyles.itemDescription} numberOfLines={2}>{item.description}</Text>
+        </View>
 
-    const fetchMenu = async () => {
-        try {
-            const response = await partnerAPI.restaurant.getMenu();
-            if (response.success && response.data) {
-                LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-                setMenuItems(response.data);
-                // Auto-expand first category
-                if (response.data.length > 0) {
-                    const firstCategory = response.data[0].category_id;
-                    setExpandedCategories(new Set([firstCategory]));
-                }
-            }
-        } catch (error) {
-            console.error('Error fetching menu:', error);
-        } finally {
-            setLoading(false);
-            setRefreshing(false);
-        }
-    };
+        <View style={menuStyles.actionsContainer}>
+            <Text style={menuStyles.availabilityLabel}>
+                {item.is_available ? 'Available' : 'Unavailable'}
+            </Text>
+            
+            {/* Checklist: Toggle availability */}
+            <Switch
+                trackColor={{ false: "#767577", true: "#4CAF50" }}
+                thumbColor={item.is_available ? "#f4f3f4" : "#f4f3f4"}
+                onValueChange={() => onToggleAvailability(item.id, !item.is_available)}
+                value={item.is_available}
+                style={menuStyles.switch}
+            />
 
+            {/* Checklist: Edit modal trigger */}
+            <TouchableOpacity 
+                onPress={() => onEdit(item)}
+                style={menuStyles.editButton}
+            >
+                <MaterialIcons name="edit" size={20} color="#007AFF" />
+            </TouchableOpacity>
+        </View>
+    </View>
+);
+
+// --- Main Component ---
+export default function MenuManagementScreen() {
+    // FIX: Initialize state with an empty array of the correct interface type
+    const [menu, setMenu] = useState<MenuItem[]>([]); 
+    const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+    const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+
+    // Load initial data
     useEffect(() => {
-        fetchMenu();
+        // Ensure getMenuItems() is implemented in utils/mock.ts
+        setMenu(getMenuItems() as MenuItem[]);
     }, []);
 
-    const onRefresh = () => {
-        setRefreshing(true);
-        fetchMenu();
-    };
-
-    const handleToggleAvailability = async (itemId: string, currentStatus: boolean) => {
-        setTogglingId(itemId);
-        try {
-            const response = await partnerAPI.restaurant.updateMenuItemStatus(itemId, !currentStatus);
-            if (response.success) {
-                LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
-                setMenuItems(prev => prev.map(item =>
-                    item.food_item_id === itemId ? { ...item, is_available: !currentStatus } : item
-                ));
-            } else {
-                Alert.alert('Error', response.error || 'Failed to update item status');
-            }
-        } catch (error) {
-            Alert.alert('Error', 'An unexpected error occurred');
-        } finally {
-            setTogglingId(null);
-        }
-    };
-
-    const toggleCategory = (category: string) => {
-        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-        setExpandedCategories(prev => {
-            const newSet = new Set(prev);
-            if (newSet.has(category)) {
-                newSet.delete(category);
-            } else {
-                newSet.add(category);
-            }
-            return newSet;
-        });
-    };
-
-    // Group items by category
-    const groupedItems = menuItems.reduce((acc, item) => {
-        const category = item.category_id || 'Uncategorized';
-        if (!acc[category]) {
-            acc[category] = [];
-        }
-        acc[category].push(item);
-        return acc;
-    }, {} as Record<string, FoodItem[]>);
-
-    // Filter items based on search
-    const filteredGroupedItems = Object.entries(groupedItems).reduce((acc, [category, items]) => {
-        const filteredItems = items.filter(item =>
-            item.name.toLowerCase().includes(searchQuery.toLowerCase())
+    // Checklist: Toggle availability (updates local state)
+    const handleToggleAvailability = useCallback((id: string, isAvailable: boolean) => {
+        setMenu(prevMenu => 
+            prevMenu.map(item => 
+                item.id === id ? { ...item, is_available: isAvailable } : item
+            )
         );
-        if (filteredItems.length > 0) {
-            acc[category] = filteredItems;
-        }
-        return acc;
-    }, {} as Record<string, FoodItem[]>);
+        Alert.alert("Status Updated", `${menu.find(i => i.id === id)?.name} is now ${isAvailable ? 'Available' : 'Unavailable'}.`);
+    }, [menu]);
 
-    const renderMenuItem = (item: FoodItem) => (
-        <Surface key={item.food_item_id} style={styles.menuItem} elevation={1}>
-            <View style={styles.itemContent}>
-                <View style={styles.itemInfo}>
-                    <View style={styles.itemHeader}>
-                        <Text style={styles.itemName} numberOfLines={1}>{item.name}</Text>
-                        {item.is_veg && (
-                            <View style={styles.vegBadge}>
-                                <View style={styles.vegDot} />
-                            </View>
-                        )}
-                    </View>
-                    {item.description && (
-                        <Text style={styles.itemDescription} numberOfLines={2}>{item.description}</Text>
-                    )}
-                    <View style={styles.itemMeta}>
-                        <Text style={styles.itemPrice}>${item.price.toFixed(2)}</Text>
-                        {item.is_popular && (
-                            <Chip
-                                icon="star"
-                                style={styles.popularChip}
-                                textStyle={styles.popularText}
-                                compact
-                            >
-                                Popular
-                            </Chip>
-                        )}
-                    </View>
-                </View>
+    // Checklist: Edit modal (opens modal)
+    const handleEditItem = useCallback((item: MenuItem) => {
+        setSelectedItem(item);
+        setIsEditModalVisible(true);
+    }, []);
 
-                <View style={styles.itemActions}>
-                    {togglingId === item.food_item_id ? (
-                        <ActivityIndicator size={24} color={DesignSystem.colors.primary[500]} />
-                    ) : (
-                        <View style={styles.switchContainer}>
-                            <Text style={[styles.statusLabel, item.is_available && styles.statusLabelActive]}>
-                                {item.is_available ? 'Available' : 'Unavailable'}
-                            </Text>
-                            <Switch
-                                value={item.is_available}
-                                onValueChange={() => handleToggleAvailability(item.food_item_id, item.is_available)}
-                                color={DesignSystem.colors.primary[600]}
-                            />
-                        </View>
-                    )}
-                </View>
-            </View>
-        </Surface>
-    );
+    // Placeholder for saving the edited item from the modal
+    const handleSaveEdit = useCallback((editedItem: MenuItem) => {
+        setMenu(prevMenu => 
+            prevMenu.map(item => 
+                item.id === editedItem.id ? editedItem : item
+            )
+        );
+        setIsEditModalVisible(false);
+        setSelectedItem(null);
+        Alert.alert("Success", `${editedItem.name} updated successfully.`);
+    }, []);
 
-    const renderCategory = ([category, items]: [string, FoodItem[]]) => {
-        const isExpanded = expandedCategories.has(category);
-        const availableCount = items.filter(item => item.is_available).length;
+    const EditItemModal = () => {
+        if (!selectedItem || !isEditModalVisible) return null;
 
+        // In a real app, this would be a sophisticated modal form.
         return (
-            <View key={category} style={styles.categorySection}>
-                <Surface style={styles.categoryHeader} elevation={0}>
-                    <View style={styles.categoryTitleContainer}>
-                        <MaterialCommunityIcons
-                            name="food"
-                            size={20}
-                            color={DesignSystem.colors.primary[600]}
-                        />
-                        <Text style={styles.categoryTitle}>{category}</Text>
-                        <View style={styles.categoryBadge}>
-                            <Text style={styles.categoryCount}>{availableCount}/{items.length}</Text>
-                        </View>
+            <View style={menuStyles.modalOverlay}>
+                <View style={menuStyles.modalContent}>
+                    <Text style={menuStyles.modalTitle}>Editing: {selectedItem.name}</Text>
+                    {/* Placeholder for form inputs */}
+                    <Text style={menuStyles.modalPlaceholder}>
+                        [Form Inputs Go Here to edit Name, Price, Description]
+                    </Text>
+                    
+                    <View style={menuStyles.modalButtons}>
+                        <TouchableOpacity onPress={() => setIsEditModalVisible(false)} style={[menuStyles.modalButton, { backgroundColor: '#ccc' }]}>
+                            <Text style={{ color: '#000' }}>Cancel</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={() => handleSaveEdit(selectedItem)} style={[menuStyles.modalButton, { backgroundColor: '#4CAF50' }]}>
+                            <Text style={{ color: '#fff' }}>Save Changes</Text>
+                        </TouchableOpacity>
                     </View>
-                    <MaterialCommunityIcons
-                        name={isExpanded ? 'chevron-up' : 'chevron-down'}
-                        size={24}
-                        color={DesignSystem.colors.text.secondary}
-                        onPress={() => toggleCategory(category)}
-                    />
-                </Surface>
-
-                {isExpanded && (
-                    <View style={styles.categoryItems}>
-                        {items.map(renderMenuItem)}
-                    </View>
-                )}
+                </View>
             </View>
         );
     };
+
 
     return (
-        <SafeAreaView style={styles.container}>
-            <View style={styles.header}>
-                <Text style={styles.title}>Menu Management</Text>
-                <Searchbar
-                    placeholder="Search menu items..."
-                    onChangeText={setSearchQuery}
-                    value={searchQuery}
-                    style={styles.searchBar}
-                    inputStyle={styles.searchInput}
-                    iconColor={DesignSystem.colors.primary[600]}
-                />
-            </View>
-
-            <ScrollView
-                contentContainerStyle={styles.content}
-                refreshControl={
-                    <RefreshControl
-                        refreshing={refreshing}
-                        onRefresh={onRefresh}
-                        colors={[DesignSystem.colors.primary[500]]}
+        <View style={styles.container}>
+            <AppHeader title="Menu Management 📝" showBack={false} />
+            <ScrollView style={styles.content}>
+                
+                <Text style={styles.sectionTitle}>Total Items ({menu.length})</Text>
+                
+                {/* Checklist: List menu_items.json */}
+                {menu.map(item => (
+                    <MenuItemRow 
+                        key={item.id} 
+                        item={item} 
+                        onToggleAvailability={handleToggleAvailability}
+                        onEdit={handleEditItem}
                     />
-                }
-            >
-                {loading && !refreshing ? (
-                    <View style={styles.centerState}>
-                        <ActivityIndicator size={40} color={DesignSystem.colors.primary[500]} />
-                    </View>
-                ) : Object.keys(filteredGroupedItems).length > 0 ? (
-                    <>
-                        <View style={styles.statsRow}>
-                            <Surface style={styles.statCard} elevation={1}>
-                                <Text style={styles.statValue}>{menuItems.length}</Text>
-                                <Text style={styles.statLabel}>Total Items</Text>
-                            </Surface>
-                            <Surface style={styles.statCard} elevation={1}>
-                                <Text style={styles.statValue}>
-                                    {menuItems.filter(item => item.is_available).length}
-                                </Text>
-                                <Text style={styles.statLabel}>Available</Text>
-                            </Surface>
-                            <Surface style={styles.statCard} elevation={1}>
-                                <Text style={styles.statValue}>{Object.keys(groupedItems).length}</Text>
-                                <Text style={styles.statLabel}>Categories</Text>
-                            </Surface>
-                        </View>
+                ))}
 
-                        {Object.entries(filteredGroupedItems).map(renderCategory)}
-                    </>
-                ) : (
-                    <View style={styles.centerState}>
-                        <Surface style={styles.emptyState} elevation={1}>
-                            <MaterialCommunityIcons
-                                name="food-off"
-                                size={64}
-                                color={DesignSystem.colors.neutral[300]}
-                            />
-                            <Text style={styles.emptyTitle}>
-                                {searchQuery ? 'No items found' : 'No menu items'}
-                            </Text>
-                            <Text style={styles.emptySubtitle}>
-                                {searchQuery
-                                    ? 'Try a different search term'
-                                    : 'Add items to start managing your menu'}
-                            </Text>
-                        </Surface>
-                    </View>
-                )}
+                <View style={{ height: 50 }} />
             </ScrollView>
-
-            <FAB
-                icon="plus"
-                style={styles.fab}
-                onPress={() => Alert.alert('Coming Soon', 'Add item feature will be available soon!')}
-                label="Add Item"
-                color="white"
-            />
-        </SafeAreaView>
+            
+            <EditItemModal />
+        </View>
     );
 }
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: DesignSystem.colors.background.primary,
-    },
-    header: {
-        padding: 20,
-        paddingBottom: 16,
-        backgroundColor: 'white',
-        borderBottomWidth: 1,
-        borderBottomColor: DesignSystem.colors.border.light,
-    },
-    title: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: DesignSystem.colors.text.primary,
-        marginBottom: 16,
-    },
-    searchBar: {
-        backgroundColor: DesignSystem.colors.neutral[100],
-        elevation: 0,
-        borderRadius: 12,
-    },
-    searchInput: {
-        fontSize: 14,
-    },
-    content: {
-        padding: 16,
-        paddingBottom: 100,
-        flexGrow: 1,
-    },
-    centerState: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingTop: 60,
-    },
-    emptyState: {
-        padding: 40,
-        alignItems: 'center',
-        borderRadius: 16,
-        backgroundColor: 'white',
-        width: '100%',
-        maxWidth: 340,
-    },
-    emptyTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: DesignSystem.colors.text.primary,
-        marginTop: 16,
-        marginBottom: 8,
-    },
-    emptySubtitle: {
-        fontSize: 14,
-        color: DesignSystem.colors.text.secondary,
-        textAlign: 'center',
-    },
-    statsRow: {
-        flexDirection: 'row',
-        gap: 12,
-        marginBottom: 20,
-    },
-    statCard: {
-        flex: 1,
-        padding: 16,
-        borderRadius: 12,
-        backgroundColor: 'white',
-        alignItems: 'center',
-    },
-    statValue: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: DesignSystem.colors.primary[600],
-        marginBottom: 4,
-    },
-    statLabel: {
-        fontSize: 12,
-        color: DesignSystem.colors.text.secondary,
-        textAlign: 'center',
-    },
-    categorySection: {
-        marginBottom: 16,
-    },
-    categoryHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: 16,
-        backgroundColor: 'white',
-        borderRadius: 12,
-        marginBottom: 8,
-    },
-    categoryTitleContainer: {
+// --- Styles ---
+
+const menuStyles = StyleSheet.create({
+    card: {
+        backgroundColor: '#fff',
+        borderRadius: 10,
+        padding: 15,
+        marginBottom: 10,
         flexDirection: 'row',
         alignItems: 'center',
-        flex: 1,
-        gap: 12,
+        shadowColor: '#000',
+        shadowOpacity: 0.05,
+        shadowRadius: 3,
+        elevation: 1,
     },
-    categoryTitle: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: DesignSystem.colors.text.primary,
-        flex: 1,
-    },
-    categoryBadge: {
-        backgroundColor: DesignSystem.colors.primary[100],
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 12,
-    },
-    categoryCount: {
-        fontSize: 12,
-        fontWeight: 'bold',
-        color: DesignSystem.colors.primary[700],
-    },
-    categoryItems: {
-        gap: 8,
-    },
-    menuItem: {
-        backgroundColor: 'white',
-        borderRadius: 12,
-        overflow: 'hidden',
-    },
-    itemContent: {
-        flexDirection: 'row',
-        padding: 16,
-    },
-    itemInfo: {
-        flex: 1,
-        marginRight: 12,
-    },
-    itemHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 6,
-        gap: 8,
+    infoContainer: {
+        flex: 3,
+        paddingRight: 10,
     },
     itemName: {
         fontSize: 16,
-        fontWeight: 'bold',
-        color: DesignSystem.colors.text.primary,
-        flex: 1,
-    },
-    vegBadge: {
-        width: 18,
-        height: 18,
-        borderWidth: 1.5,
-        borderColor: DesignSystem.colors.success,
-        borderRadius: 3,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    vegDot: {
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-        backgroundColor: DesignSystem.colors.success,
-    },
-    itemDescription: {
-        fontSize: 13,
-        color: DesignSystem.colors.text.secondary,
-        marginBottom: 8,
-        lineHeight: 18,
-    },
-    itemMeta: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
+        fontWeight: '700',
+        color: '#333',
     },
     itemPrice: {
-        fontSize: 16,
+        fontSize: 14,
         fontWeight: 'bold',
-        color: DesignSystem.colors.primary[600],
+        color: '#4CAF50',
+        marginVertical: 4,
     },
-    popularChip: {
-        backgroundColor: DesignSystem.colors.accent[100],
-        height: 24,
+    itemDescription: {
+        fontSize: 12,
+        color: '#777',
     },
-    popularText: {
-        fontSize: 11,
-        color: DesignSystem.colors.accent[700],
-        fontWeight: 'bold',
+    actionsContainer: {
+        flex: 2,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'flex-end',
     },
-    itemActions: {
-        justifyContent: 'center',
-        alignItems: 'flex-end',
-    },
-    switchContainer: {
-        alignItems: 'flex-end',
-        gap: 4,
-    },
-    statusLabel: {
-        fontSize: 11,
-        color: DesignSystem.colors.text.disabled,
+    availabilityLabel: {
+        fontSize: 12,
         fontWeight: '600',
-        textTransform: 'uppercase',
-        letterSpacing: 0.5,
+        marginRight: 8,
+        color: '#777',
     },
-    statusLabelActive: {
-        color: DesignSystem.colors.success,
+    switch: {
+        transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }],
     },
-    fab: {
-        position: 'absolute',
-        margin: 16,
-        right: 0,
-        bottom: 0,
-        backgroundColor: DesignSystem.colors.primary[600],
-        borderRadius: 16,
+    editButton: {
+        padding: 8,
+        marginLeft: 10,
     },
+    // Modal Styles (simplified for mock implementation)
+    modalOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 100,
+    },
+    modalContent: {
+        backgroundColor: 'white',
+        borderRadius: 10,
+        padding: 20,
+        width: '80%',
+        alignItems: 'center',
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 15,
+    },
+    modalPlaceholder: {
+        fontSize: 14,
+        color: '#999',
+        height: 60,
+        textAlign: 'center',
+        borderWidth: 1,
+        borderColor: '#eee',
+        borderRadius: 5,
+        padding: 10,
+        marginBottom: 20,
+        width: '100%',
+    },
+    modalButtons: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: '100%',
+    },
+    modalButton: {
+        padding: 10,
+        borderRadius: 5,
+        alignItems: 'center',
+        flex: 1,
+        marginHorizontal: 5,
+    }
+});
+
+const styles = StyleSheet.create({
+    container: { flex: 1, backgroundColor: '#f5f5f5' },
+    content: { padding: 15 },
+    sectionTitle: { fontSize: 16, fontWeight: '700', color: '#333', marginBottom: 10, marginTop: 10 },
 });
