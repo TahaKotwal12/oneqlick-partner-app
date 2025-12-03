@@ -14,7 +14,7 @@ const AvailabilityToggle = ({ partnerName, isOnline, toggleOnline }) => (
     <Text style={styles.partnerName}>{partnerName}</Text>
     <View style={styles.toggleRow}>
       <Text style={[styles.statusText, { color: isOnline ? '#4CAF50' : '#F44336' }]}>
-        You are **{isOnline ? 'Online' : 'Offline'}**
+        You are {isOnline ? 'Online' : 'Offline'}
       </Text>
       <Switch
         trackColor={{ false: "#767577", true: "#4CAF50" }}
@@ -43,7 +43,7 @@ const OrderListItem = ({ item, onOpen }) => {
   return (
     <TouchableOpacity style={styles.listItem} onPress={() => onOpen(item.id)}>
       <View style={styles.row}>
-        <Text style={styles.orderId}>Order ID: **{item.id}**</Text>
+        <Text style={styles.orderId}>Order ID: {item.id}</Text>
         <Text style={styles.amountText}>${item.amount.toFixed(2)}</Text>
       </View>
       
