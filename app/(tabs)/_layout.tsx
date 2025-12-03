@@ -1,12 +1,18 @@
+// oneQlick/app/(tabs)/_layout.tsx (Updated to fix overlap)
+
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useAuth } from '../../hooks/useAuthZustand';
 import { useTheme } from 'react-native-paper';
+// *** NEW IMPORT ***
+import { useSafeAreaInsets } from 'react-native-safe-area-context'; 
 
 export default function TabLayout() {
   const { user } = useAuth();
   const theme = useTheme();
+  // *** NEW HOOK CALL ***
+  const insets = useSafeAreaInsets(); 
 
   return (
     <Tabs
@@ -18,8 +24,10 @@ export default function TabLayout() {
           backgroundColor: 'white',
           borderTopColor: '#f0f0f0',
           elevation: 8,
-          height: 60,
-          paddingBottom: 8,
+          // *** FIX: Adjust height to accommodate system safe area ***
+          height: 60 + insets.bottom, 
+          // *** FIX: Apply the bottom inset to the padding ***
+          paddingBottom: 8 + insets.bottom, 
           paddingTop: 8,
         },
         tabBarLabelStyle: {
