@@ -55,6 +55,18 @@ oneQlick/
 │   └── fonts/                  # Custom fonts
 └── package.json                # Dependencies and scripts
 ```
+## Mock Data Setup
+
+We are using mock JSON files for rapid frontend development. All screen data is initially loaded from the `/src/mock` directory.
+
+### How to Use/Disable Mocks
+
+The mock data utility is controlled by the `USE_MOCK` constant in `utils/mock.ts`.
+
+-   **To use mock data:** Set `export const USE_MOCK = true;`
+-   **To switch to real API calls (future):** Set `export const USE_MOCK = false;`
+
+Ensure all features developed initially use the wrappers (e.g., `getDeliveryOrders()`) from `utils/mock.ts` to easily transition to real API endpoints later.
 
 ## 🛠️ Technology Stack
 
@@ -263,3 +275,4 @@ For support and questions:
 
 **Built with ❤️ for rural Indian communities** # oneQlick-User-App
 "# oneqlick-partner-app" 
+

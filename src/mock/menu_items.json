@@ -1,0 +1,23 @@
+[
+  {
+    "id": "M-001",
+    "name": "Classic Burger",
+    "price": 10.50,
+    "description": "Our signature burger.",
+    "is_available": true
+  },
+  {
+    "id": "M-002",
+    "name": "Fries",
+    "price": 3.00,
+    "description": "Crispy salted fries.",
+    "is_available": true
+  },
+  {
+    "id": "M-003",
+    "name": "Milkshake",
+    "price": 5.00,
+    "description": "Vanilla, Chocolate, or Strawberry.",
+    "is_available": false
+  }
+]

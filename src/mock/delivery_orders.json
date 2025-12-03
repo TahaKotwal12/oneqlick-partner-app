@@ -1,0 +1,37 @@
+[
+  {
+    "id": "DO-001",
+    "status": "Ready for Pickup",
+    "amount": 25.50,
+    "pickup": {
+      "name": "Pizza Planet",
+      "address": "123 Main St, Anytown"
+    },
+    "drop": {
+      "name": "Customer A",
+      "address": "456 Oak Ave, Anytown"
+    },
+    "items": [
+      {"name": "Pepperoni Pizza", "qty": 1},
+      {"name": "Soda", "qty": 2}
+    ],
+    "payment_type": "Credit Card"
+  },
+  {
+    "id": "DO-002",
+    "status": "In Transit",
+    "amount": 15.00,
+    "pickup": {
+      "name": "Burger Joint",
+      "address": "789 Pine Rd, Anytown"
+    },
+    "drop": {
+      "name": "Customer B",
+      "address": "101 Elm Ln, Anytown"
+    },
+    "items": [
+        {"name": "Cheeseburger", "qty": 1}
+    ],
+    "payment_type": "Cash"
+  }
+]
