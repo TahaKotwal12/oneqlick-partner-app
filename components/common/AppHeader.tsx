@@ -1,23 +1,21 @@
-// oneQlick/components/common/AppHeader.tsx
-
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useNavigation } from 'expo-router'; 
-import { MaterialIcons } from '@expo/vector-icons'; 
+import { MaterialIcons } from '@expo/vector-icons'; // Consistent with layout.tsx
 import { useSafeAreaInsets } from 'react-native-safe-area-context'; 
 
 interface AppHeaderProps {
   title: string;
   showBack?: boolean;
   rightAction?: {
-    iconName: keyof typeof MaterialIcons.glyphMap; 
+    iconName: keyof typeof MaterialIcons.glyphMap; // Type uses MaterialIcons
     onPress: () => void;
   };
 }
 
 const AppHeader: React.FC<AppHeaderProps> = ({ title, showBack = false, rightAction }) => {
   const navigation = useNavigation();
-  const insets = useSafeAreaInsets(); 
+  const insets = useSafeAreaInsets(); // Used to respect the top safe area (notch/status bar)
 
   const handleBack = () => {
     if (navigation.canGoBack()) {
@@ -26,6 +24,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({ title, showBack = false, rightAct
   };
 
   return (
+    // The paddingTop: insets.top ensures the header content sits below the notch/status bar
     <View style={[styles.container, { paddingTop: insets.top }]}> 
       <View style={styles.header}>
         <View style={styles.left}>
@@ -55,7 +54,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#eee',
   },
   header: {
-    height: 56,
+    height: 56, // Standard header content height
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
