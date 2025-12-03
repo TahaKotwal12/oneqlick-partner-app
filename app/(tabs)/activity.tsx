@@ -1,11 +1,12 @@
+// oneQlick/app/(tabs)/activity.tsx (Restaurant Dashboard Screen)
+
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, FlatList, Alert } from 'react-native';
 import AppHeader from '../../components/common/AppHeader';
 import { MaterialIcons } from '@expo/vector-icons';
-// NOTE: Ensure your mock utilities file path is correct here
 import { getRestaurantOrders, getMenuItems } from '../../utils/mock'; 
 
-// *** Data Interfaces (Define these in types/index.ts eventually) ***
+// *** Data Interfaces ***
 interface RestaurantOrder {
     id: string;
     status: string;
@@ -51,13 +52,12 @@ const OrderPreviewItem = ({ order }: { order: RestaurantOrder }) => (
 );
 
 
-export default function RestaurantDashboardScreen() {
+export default function ActivityScreen() {
     const [orders, setOrders] = useState<RestaurantOrder[]>([]);
     const [menu, setMenu] = useState<MenuItem[]>([]);
 
     useEffect(() => {
-        // Load mock data (ensure getRestaurantOrders and getMenuItems exist and return mock data)
-        // You may need to cast the mock data to the defined interface types.
+        // Load mock data
         setOrders(getRestaurantOrders() as RestaurantOrder[]);
         setMenu(getMenuItems() as MenuItem[]);
     }, []);
@@ -73,7 +73,8 @@ export default function RestaurantDashboardScreen() {
 
     return (
         <View style={styles.container}>
-            <AppHeader title="Restaurant Dashboard" showBack={false} />
+            {/* 🍽️ Icon added to the header title */}
+            <AppHeader title="Restaurant Activity 🍽️" showBack={false} /> 
             <ScrollView style={styles.content}>
 
                 {/* Checklist: Summary Tiles */}

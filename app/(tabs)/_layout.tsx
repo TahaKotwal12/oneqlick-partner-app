@@ -1,18 +1,19 @@
-// oneQlick/app/(tabs)/_layout.tsx (Updated to fix overlap)
+// oneQlick/app/(tabs)/_layout.tsx 
 
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useAuth } from '../../hooks/useAuthZustand';
 import { useTheme } from 'react-native-paper';
-// *** NEW IMPORT ***
 import { useSafeAreaInsets } from 'react-native-safe-area-context'; 
 
 export default function TabLayout() {
   const { user } = useAuth();
   const theme = useTheme();
-  // *** NEW HOOK CALL ***
   const insets = useSafeAreaInsets(); 
+
+  const isRestaurant = user?.role === 'restaurant_owner';
+  const isDelivery = user?.role === 'delivery_partner'; 
 
   return (
     <Tabs
@@ -24,9 +25,7 @@ export default function TabLayout() {
           backgroundColor: 'white',
           borderTopColor: '#f0f0f0',
           elevation: 8,
-          // *** FIX: Adjust height to accommodate system safe area ***
-          height: 60 + insets.bottom, 
-          // *** FIX: Apply the bottom inset to the padding ***
+          height: 75 + insets.bottom, 
           paddingBottom: 8 + insets.bottom, 
           paddingTop: 8,
         },
@@ -44,8 +43,9 @@ export default function TabLayout() {
         }}
       />
 
-      {/* Restaurant Tabs */}
-      {user?.role === 'restaurant_owner' ? (
+      {/* 1. RESTAURANT STARTING TABS (Conditional) */}
+      {isRestaurant ? (
+        // SHOW: Orders and Menu for Restaurant Owner
         <>
           <Tabs.Screen
             name="orders"
@@ -63,15 +63,15 @@ export default function TabLayout() {
           />
         </>
       ) : (
-        // Hide these if not restaurant
+        // 🔑 FIX: HIDE Orders and Menu for Delivery Partner/Other Roles
         <>
           <Tabs.Screen name="orders" options={{ href: null }} />
           <Tabs.Screen name="menu" options={{ href: null }} />
         </>
       )}
 
-      {/* Delivery Tabs */}
-      {user?.role === 'delivery_partner' ? (
+      {/* 2. DELIVERY STARTING TABS (Conditional) */}
+      {isDelivery ? (
         <Tabs.Screen
           name="deliveries"
           options={{
@@ -80,10 +80,11 @@ export default function TabLayout() {
           }}
         />
       ) : (
+        // Hide the Deliveries tab for the Restaurant Owner/Other Roles
         <Tabs.Screen name="deliveries" options={{ href: null }} />
       )}
-
-      {/* Common Tabs */}
+      
+      {/* 3. COMMON TABS - Earnings and Profile */}
       <Tabs.Screen
         name="earnings"
         options={{
@@ -98,6 +99,15 @@ export default function TabLayout() {
           title: 'Profile',
           tabBarIcon: ({ color }) => <MaterialIcons name="person" size={24} color={color} />,
         }}
+      />
+
+      {/* 4. ACTIVITY TAB (Always Last) */}
+      <Tabs.Screen
+          name="activity" 
+          options={{
+            title: 'Activity', 
+            tabBarIcon: ({ color }) => <MaterialIcons name="dashboard" size={24} color={color} />,
+          }}
       />
     </Tabs>
   );

@@ -1,6 +1,6 @@
 {
   "name": "Alex Johnson",
-  "role": "Delivery Partner",
+  "role": "delivery_partner",
   "earnings_today": 85.50,
   "trips_today": 7,
   "is_online": true
