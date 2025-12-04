@@ -1,4 +1,4 @@
-// oneQlick/app/delivery-order-details.tsx (FINAL FIX - Addressing Declaration Error)
+// oneQlick/app/delivery-order-details.tsx (TASK 10 INTEGRATION - FINAL)
 
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Alert, TouchableOpacity } from 'react-native';
@@ -7,6 +7,9 @@ import AppHeader from '../components/common/AppHeader';
 import { getDeliveryOrders } from '../utils/mock'; 
 import { MaterialIcons } from '@expo/vector-icons'; 
 import { useSafeAreaInsets } from 'react-native-safe-area-context'; 
+// 🔑 IMPORT NEW REUSABLE COMPONENT:
+import MapPlaceholderComponent from '../components/common/MapPlaceholder'; 
+
 
 // *** FIX 1: Define the required TypeScript Interfaces (Blueprints) ***
 interface LocationDetail {
@@ -56,14 +59,7 @@ interface InfoRowProps {
 
 // ----------------------------------------------------------------------
 
-
-// --- Helper Component: Map Placeholder ---
-const MapPlaceholderComponent = ({ pickup, drop }: { pickup: LocationDetail, drop: LocationDetail }) => (
-    <View style={mapStyles.mapContainer}>
-      <Text style={mapStyles.mapText}>[Map Placeholder]</Text>
-      <Text style={mapStyles.mapText}>From **{pickup.name}** to **{drop.name}**</Text>
-    </View>
-);
+// --- OLD MAP HELPER AND mapStyles REMOVED FROM THIS LOCATION ---
 
 // --- Helper Components for Clean Code (DEFINED ONCE) ---
 
@@ -98,13 +94,10 @@ const InfoRow = ({ label, value, isTotal = false }: InfoRowProps) => (
 
 const DeliveryOrderDetailsScreen = () => {
     const params = useLocalSearchParams();
-    // Ensure orderId is treated as a string, which is correct for query params.
     const orderId = Array.isArray(params.orderId) ? params.orderId[0] : params.orderId;
     
-    // Get safe area insets for bottom button fix
     const insets = useSafeAreaInsets();
     
-    // Apply type to the order state
     const [order, setOrder] = useState<DeliveryOrder | null>(null);
     const [status, setStatus] = useState('Loading...');
 
@@ -169,7 +162,7 @@ const DeliveryOrderDetailsScreen = () => {
             <AppHeader title={`Order #${order.id}`} showBack={false} /> 
             <ScrollView style={styles.content}>
                 
-                {/* Checklist: Map placeholder. */}
+                {/* 🔑 INTEGRATED: Use the new reusable Map Placeholder Component */}
                 <MapPlaceholderComponent pickup={order.pickup} drop={order.drop} />
                 
                 {/* Current Status */}
@@ -213,21 +206,6 @@ const DeliveryOrderDetailsScreen = () => {
 
 
 // --- Styles ---
-const mapStyles = StyleSheet.create({
-    mapContainer: {
-        height: 150,
-        backgroundColor: '#e0e0e0',
-        borderRadius: 8,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: 15,
-    },
-    mapText: {
-        color: '#666',
-        fontWeight: '600',
-    }
-});
-
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#f5f5f5' },
     loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
