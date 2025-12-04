@@ -36,6 +36,7 @@ export default function ProfileScreen() {
     // 1. Checklist: Use profile.json and load state
     useEffect(() => {
         try {
+            // Ensure getProfile() returns the structure defined in UserProfile
             const mockProfile: UserProfile = getProfile();
             setProfile(mockProfile);
             setIsOnline(mockProfile.is_online);
@@ -118,12 +119,24 @@ export default function ProfileScreen() {
                 
                 {/* Placeholder for settings/other links */}
                 <View style={{ marginTop: 20 }}>
-                    <TouchableOpacity style={profileStyles.linkItem}>
+                    <TouchableOpacity 
+                        style={profileStyles.linkItem}
+                        // 🔑 ADDED: OnPress handler
+                        onPress={() => Alert.alert("Navigation", "Settings screen coming soon!")} 
+                    >
                         <MaterialIcons name="settings" size={24} color="#666" />
                         <Text style={profileStyles.linkText}>Settings</Text>
                         <MaterialIcons name="chevron-right" size={24} color="#ccc" style={profileStyles.linkIcon} />
                     </TouchableOpacity>
-                    <TouchableOpacity style={profileStyles.linkItem}>
+
+                    <TouchableOpacity 
+                        style={profileStyles.linkItem}
+                        // 🔑 ADDED: OnPress handler for Log Out
+                        onPress={() => Alert.alert("Confirm Logout", "Are you sure you want to log out?", [
+                            { text: "Cancel" },
+                            { text: "Log Out", style: 'destructive', onPress: () => console.log("User logged out.") }
+                        ])} 
+                    >
                         <MaterialIcons name="logout" size={24} color="#F44336" />
                         <Text style={profileStyles.linkText}>Log Out</Text>
                         <MaterialIcons name="chevron-right" size={24} color="#ccc" style={profileStyles.linkIcon} />
