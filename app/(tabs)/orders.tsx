@@ -1,7 +1,9 @@
-// oneQlick/app/(tabs)/orders.tsx (Restaurant Order Management Screen - Task 6)
+// oneQlick/app/(tabs)/orders.tsx (UPDATED for Navigation to Details Screen - Task 8 Link)
 
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+// 🔑 ADDED: useRouter for navigation
+import { useRouter } from 'expo-router'; 
 import AppHeader from '../../components/common/AppHeader';
 import { MaterialIcons } from '@expo/vector-icons';
 import { getRestaurantOrders } from '../../utils/mock'; 
@@ -9,7 +11,6 @@ import { getRestaurantOrders } from '../../utils/mock';
 // *** Data Interfaces ***
 interface RestaurantOrder {
     id: string;
-    // Define allowed statuses for type safety
     status: 'New' | 'Preparing' | 'Ready' | 'Rejected' | 'Delivered'; 
     total: number;
     customer: string;
@@ -31,56 +32,49 @@ const ActionButton = ({ title, onPress, color }: { title: string, onPress: () =>
 );
 
 // Component for a single Order Card with Actions
-const OrderCard = ({ order, onStatusChange }: { order: RestaurantOrder, onStatusChange: (id: string, newStatus: RestaurantOrder['status']) => void }) => {
+// 🔑 UPDATED: Added onOpenDetails prop
+const OrderCard = ({ order, onStatusChange, onOpenDetails }: { 
+    order: RestaurantOrder, 
+    onStatusChange: (id: string, newStatus: RestaurantOrder['status']) => void,
+    onOpenDetails: (id: string) => void // Handler to open the detail screen
+}) => {
     
-    const getStatusChipStyle = (status: string) => {
+    const getStatusChipStyle = (status: string) => { 
         switch (status) {
-            case 'New': return { backgroundColor: '#FF9800', color: '#fff' }; // Orange
-            case 'Preparing': return { backgroundColor: '#2196F3', color: '#fff' }; // Blue
-            case 'Ready': return { backgroundColor: '#4CAF50', color: '#fff' }; // Green
-            case 'Rejected': return { backgroundColor: '#F44336', color: '#fff' }; // Red
-            case 'Delivered': return { backgroundColor: '#000000', color: '#fff' }; // Black/Final
+            case 'New': return { backgroundColor: '#FF9800', color: '#fff' };
+            case 'Preparing': return { backgroundColor: '#2196F3', color: '#fff' };
+            case 'Ready': return { backgroundColor: '#4CAF50', color: '#fff' };
+            case 'Rejected': return { backgroundColor: '#F44336', color: '#fff' };
+            case 'Delivered': return { backgroundColor: '#000000', color: '#fff' };
             default: return { backgroundColor: '#9E9E9E', color: '#fff' };
         }
     };
     
     const statusStyle = getStatusChipStyle(order.status);
-    
-    // Checklist: Actions: Accept, Reject, Mark Ready
     const renderActions = () => {
         if (order.status === 'New') {
             return (
                 <View style={orderStyles.actionsRow}>
-                    <ActionButton 
-                        title="Accept" 
-                        color="#4CAF50" 
-                        onPress={() => onStatusChange(order.id, 'Preparing')} 
-                    />
-                    <ActionButton 
-                        title="Reject" 
-                        color="#F44336" 
-                        onPress={() => onStatusChange(order.id, 'Rejected')} 
-                    />
+                    <ActionButton title="Accept" color="#4CAF50" onPress={() => onStatusChange(order.id, 'Preparing')} />
+                    <ActionButton title="Reject" color="#F44336" onPress={() => onStatusChange(order.id, 'Rejected')} />
                 </View>
             );
         } else if (order.status === 'Preparing') {
             return (
-                <ActionButton 
-                    title="Mark Ready" 
-                    color="#007AFF" 
-                    onPress={() => onStatusChange(order.id, 'Ready')} 
-                />
+                <ActionButton title="Mark Ready" color="#007AFF" onPress={() => onStatusChange(order.id, 'Ready')} />
             );
         } else if (order.status === 'Ready') {
-            return (
-                <Text style={orderStyles.readyText}>Waiting for Driver Pickup...</Text>
-            );
+            return (<Text style={orderStyles.readyText}>Waiting for Driver Pickup...</Text>);
         }
         return <Text style={orderStyles.finalStatusText}>Status: {order.status}</Text>;
     };
 
     return (
-        <View style={orderStyles.card}>
+        <TouchableOpacity 
+            style={orderStyles.card} 
+            // 🔑 ADDED: Navigation action on card press
+            onPress={() => onOpenDetails(order.id)} 
+        >
             <View style={orderStyles.header}>
                 <Text style={orderStyles.orderId}>Order #{order.id}</Text>
                 <View style={[orderStyles.statusChip, { backgroundColor: statusStyle.backgroundColor }]}>
@@ -111,21 +105,21 @@ const OrderCard = ({ order, onStatusChange }: { order: RestaurantOrder, onStatus
             <View style={orderStyles.actionsContainer}>
                 {renderActions()}
             </View>
-        </View>
+        </TouchableOpacity>
     );
 };
 
+
 // --- Main Component ---
 export default function OrderManagementScreen() {
+    // 🔑 ADDED: Initialize router
+    const router = useRouter(); 
     const [orders, setOrders] = useState<RestaurantOrder[]>([]);
 
     useEffect(() => {
-        // Load mock restaurant orders
-        // Ensure getRestaurantOrders() is correctly implemented in utils/mock.ts
         setOrders(getRestaurantOrders() as RestaurantOrder[]);
     }, []);
 
-    // Checklist: State transitions locally.
     const handleStatusChange = (id: string, newStatus: RestaurantOrder['status']) => {
         setOrders(prevOrders => 
             prevOrders.map(order => 
@@ -135,19 +129,33 @@ export default function OrderManagementScreen() {
         Alert.alert("Status Updated", `Order ${id} is now ${newStatus}.`);
     };
 
-    // Checklist: List orders by status.
+    // 🔑 ADDED: Navigation handler function
+    const handleOpenDetails = (id: string) => {
+        router.push({
+            // Path to the new details screen created in Task 8
+            pathname: '/restaurant-order-details', 
+            params: { orderId: id },
+        });
+    };
+
     const newOrders = orders.filter(o => o.status === 'New');
     const activeOrders = orders.filter(o => o.status === 'Preparing' || o.status === 'Ready');
     const completedOrders = orders.filter(o => o.status === 'Delivered' || o.status === 'Rejected');
 
-    const renderOrderList = (title: string, list: RestaurantOrder[]) => (
+    // 🔑 UPDATED: renderOrderList now passes the click handler
+    const renderOrderList = (title: string, list: RestaurantOrder[], onOpenDetails: (id: string) => void) => (
         <View>
             <Text style={styles.sectionTitle}>{title} ({list.length})</Text>
             {list.length === 0 ? (
                 <Text style={styles.emptyText}>No {title.toLowerCase()}.</Text>
             ) : (
                 list.map(order => (
-                    <OrderCard key={order.id} order={order} onStatusChange={handleStatusChange} />
+                    <OrderCard 
+                        key={order.id} 
+                        order={order} 
+                        onStatusChange={handleStatusChange} 
+                        onOpenDetails={onOpenDetails} // PASSED
+                    />
                 ))
             )}
         </View>
@@ -158,9 +166,10 @@ export default function OrderManagementScreen() {
             <AppHeader title="Order Management 🛎️" showBack={false} />
             <ScrollView style={styles.content}>
                 
-                {renderOrderList('New Orders', newOrders)}
-                {renderOrderList('Active Orders', activeOrders)}
-                {renderOrderList('Completed Orders', completedOrders)}
+                {/* 🔑 UPDATED: Passing handleOpenDetails to renderOrderList */}
+                {renderOrderList('New Orders', newOrders, handleOpenDetails)}
+                {renderOrderList('Active Orders', activeOrders, handleOpenDetails)}
+                {renderOrderList('Completed Orders', completedOrders, handleOpenDetails)}
 
                 <View style={{ height: 50 }} />
             </ScrollView>
@@ -274,7 +283,7 @@ const orderStyles = StyleSheet.create({
     }
 });
 
-const styles = StyleSheet.create({
+const styles = StyleSheet.create({ 
     container: { flex: 1, backgroundColor: '#f5f5f5' },
     content: { padding: 15 },
     sectionTitle: { fontSize: 16, fontWeight: '700', color: '#333', marginBottom: 10, marginTop: 10 },
