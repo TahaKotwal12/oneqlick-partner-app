@@ -1,0 +1,25 @@
+[
+  {
+    "id": "RO-101",
+    "status": "New",
+    "total": 35.75,
+    "customer": "Sarah Connor",
+    "pickup_time": "15:30",
+    "items": [
+      {"name": "Veggie Burrito", "qty": 1},
+      {"name": "Guacamole", "qty": 1}
+    ],
+    "notes": ""
+  },
+  {
+    "id": "RO-102",
+    "status": "Preparing",
+    "total": 12.00,
+    "customer": "John Doe",
+    "pickup_time": "15:45",
+    "items": [
+      {"name": "Coffee Latte", "qty": 1}
+    ],
+    "notes": "Extra sugar please."
+  }
+]

@@ -1,468 +1,291 @@
-import React, { useState, useCallback } from 'react';
-import { View, StyleSheet, ScrollView, RefreshControl, Alert, LayoutAnimation, Platform, UIManager } from 'react-native';
-import { Text, Surface, Button, Chip, Card, ActivityIndicator, Badge, Divider, IconButton } from 'react-native-paper';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { GlobalStyles } from '../../styles/globalStyles';
-import { DesignSystem } from '../../constants/designSystem';
-import { partnerAPI } from '../../services/partnerService';
-import { Order } from '../../types';
-import { useFocusEffect } from 'expo-router';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+// oneQlick/app/(tabs)/orders.tsx (UPDATED for Navigation to Details Screen - Task 8 Link)
 
-// Enable LayoutAnimation for Android
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-    UIManager.setLayoutAnimationEnabledExperimental(true);
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+// 🔑 ADDED: useRouter for navigation
+import { useRouter } from 'expo-router'; 
+import AppHeader from '../../components/common/AppHeader';
+import { MaterialIcons } from '@expo/vector-icons';
+import { getRestaurantOrders } from '../../utils/mock'; 
+
+// *** Data Interfaces ***
+interface RestaurantOrder {
+    id: string;
+    status: 'New' | 'Preparing' | 'Ready' | 'Rejected' | 'Delivered'; 
+    total: number;
+    customer: string;
+    pickup_time: string;
+    items: { name: string, qty: number }[];
+    notes?: string;
 }
 
-type OrderStatusFilter = 'pending' | 'preparing' | 'ready' | 'completed';
+// --- Helper Components ---
 
-const STATUS_CONFIG = {
-    pending: { color: DesignSystem.colors.warning, icon: 'clock-outline', label: 'New' },
-    preparing: { color: DesignSystem.colors.info, icon: 'chef-hat', label: 'Preparing' },
-    ready: { color: DesignSystem.colors.success, icon: 'check-circle', label: 'Ready' },
-    completed: { color: DesignSystem.colors.neutral[500], icon: 'check-all', label: 'Completed' },
-};
+// Component for the Order Action Buttons
+const ActionButton = ({ title, onPress, color }: { title: string, onPress: () => void, color: string }) => (
+    <TouchableOpacity 
+        onPress={onPress} 
+        style={[orderStyles.actionButton, { backgroundColor: color }]}
+    >
+        <Text style={orderStyles.actionButtonText}>{title}</Text>
+    </TouchableOpacity>
+);
 
-export default function OrdersScreen() {
-    const [orders, setOrders] = useState<Order[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [refreshing, setRefreshing] = useState(false);
-    const [activeFilter, setActiveFilter] = useState<OrderStatusFilter>('pending');
-    const [processingId, setProcessingId] = useState<string | null>(null);
-
-    const fetchOrders = async () => {
-        try {
-            const response = await partnerAPI.restaurant.getOrders(activeFilter);
-            if (response.success && response.data) {
-                LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-                setOrders(response.data);
-            }
-        } catch (error) {
-            console.error('Error fetching orders:', error);
-        } finally {
-            setLoading(false);
-            setRefreshing(false);
+// Component for a single Order Card with Actions
+// 🔑 UPDATED: Added onOpenDetails prop
+const OrderCard = ({ order, onStatusChange, onOpenDetails }: { 
+    order: RestaurantOrder, 
+    onStatusChange: (id: string, newStatus: RestaurantOrder['status']) => void,
+    onOpenDetails: (id: string) => void // Handler to open the detail screen
+}) => {
+    
+    const getStatusChipStyle = (status: string) => { 
+        switch (status) {
+            case 'New': return { backgroundColor: '#FF9800', color: '#fff' };
+            case 'Preparing': return { backgroundColor: '#2196F3', color: '#fff' };
+            case 'Ready': return { backgroundColor: '#4CAF50', color: '#fff' };
+            case 'Rejected': return { backgroundColor: '#F44336', color: '#fff' };
+            case 'Delivered': return { backgroundColor: '#000000', color: '#fff' };
+            default: return { backgroundColor: '#9E9E9E', color: '#fff' };
         }
     };
-
-    useFocusEffect(
-        useCallback(() => {
-            setLoading(true);
-            fetchOrders();
-        }, [activeFilter])
-    );
-
-    const onRefresh = () => {
-        setRefreshing(true);
-        fetchOrders();
-    };
-
-    const handleStatusUpdate = async (orderId: string, newStatus: string) => {
-        setProcessingId(orderId);
-        try {
-            const response = await partnerAPI.restaurant.updateOrderStatus(orderId, newStatus);
-            if (response.success) {
-                LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
-                fetchOrders();
-            } else {
-                Alert.alert('Error', response.error || 'Failed to update order status');
-            }
-        } catch (error) {
-            Alert.alert('Error', 'An unexpected error occurred');
-        } finally {
-            setProcessingId(null);
-        }
-    };
-
-    const getTimeAgo = (dateString: string) => {
-        const now = new Date();
-        const orderTime = new Date(dateString);
-        const diffMinutes = Math.floor((now.getTime() - orderTime.getTime()) / 60000);
-
-        if (diffMinutes < 1) return 'Just now';
-        if (diffMinutes < 60) return `${diffMinutes}m ago`;
-        const diffHours = Math.floor(diffMinutes / 60);
-        if (diffHours < 24) return `${diffHours}h ago`;
-        return orderTime.toLocaleDateString();
-    };
-
-    const renderOrderItem = (order: Order) => {
-        const statusConfig = STATUS_CONFIG[activeFilter];
-
-        return (
-            <Surface key={order.order_id} style={styles.orderCard} elevation={2}>
-                <View style={[styles.statusBar, { backgroundColor: statusConfig.color }]} />
-
-                <View style={styles.cardContent}>
-                    <View style={styles.orderHeader}>
-                        <View style={styles.orderInfo}>
-                            <Text style={styles.orderId}>#{order.order_number}</Text>
-                            <Text style={styles.timeAgo}>{getTimeAgo(order.created_at)}</Text>
-                        </View>
-                        <Badge
-                            style={[styles.statusBadge, { backgroundColor: `${statusConfig.color}20` }]}
-                            size={28}
-                        >
-                            <Text style={[styles.statusText, { color: statusConfig.color }]}>
-                                {statusConfig.label}
-                            </Text>
-                        </Badge>
-                    </View>
-
-                    <View style={styles.itemsSection}>
-                        <View style={styles.itemsHeader}>
-                            <MaterialCommunityIcons name="food" size={16} color={DesignSystem.colors.text.secondary} />
-                            <Text style={styles.itemsCount}>{order.items?.length || 0} Items</Text>
-                        </View>
-
-                        {order.items && order.items.length > 0 && (
-                            <View style={styles.itemsList}>
-                                {order.items.slice(0, 3).map((item, index) => (
-                                    <View key={index} style={styles.itemRow}>
-                                        <Text style={styles.itemQuantity}>{item.quantity}x</Text>
-                                        <Text style={styles.itemName} numberOfLines={1}>{item.name}</Text>
-                                    </View>
-                                ))}
-                                {order.items.length > 3 && (
-                                    <Text style={styles.moreItems}>+{order.items.length - 3} more</Text>
-                                )}
-                            </View>
-                        )}
-                    </View>
-
-                    <Divider style={styles.divider} />
-
-                    <View style={styles.footer}>
-                        <View style={styles.totalSection}>
-                            <Text style={styles.totalLabel}>Total Amount</Text>
-                            <Text style={styles.totalAmount}>${order.total_amount.toFixed(2)}</Text>
-                        </View>
-
-                        <View style={styles.actions}>
-                            {activeFilter === 'pending' && (
-                                <>
-                                    <Button
-                                        mode="outlined"
-                                        onPress={() => handleStatusUpdate(order.order_id, 'cancelled')}
-                                        disabled={!!processingId}
-                                        textColor={DesignSystem.colors.error}
-                                        style={styles.rejectButton}
-                                        compact
-                                    >
-                                        Reject
-                                    </Button>
-                                    <Button
-                                        mode="contained"
-                                        onPress={() => handleStatusUpdate(order.order_id, 'preparing')}
-                                        loading={processingId === order.order_id}
-                                        disabled={!!processingId}
-                                        style={styles.acceptButton}
-                                        contentStyle={styles.actionButtonContent}
-                                    >
-                                        Accept
-                                    </Button>
-                                </>
-                            )}
-
-                            {activeFilter === 'preparing' && (
-                                <Button
-                                    mode="contained"
-                                    onPress={() => handleStatusUpdate(order.order_id, 'ready')}
-                                    loading={processingId === order.order_id}
-                                    disabled={!!processingId}
-                                    style={styles.primaryButton}
-                                    contentStyle={styles.actionButtonContent}
-                                    icon="check"
-                                >
-                                    Mark Ready
-                                </Button>
-                            )}
-
-                            {activeFilter === 'ready' && (
-                                <Button
-                                    mode="contained"
-                                    onPress={() => handleStatusUpdate(order.order_id, 'picked_up')}
-                                    loading={processingId === order.order_id}
-                                    disabled={!!processingId}
-                                    style={styles.primaryButton}
-                                    contentStyle={styles.actionButtonContent}
-                                    icon="hand-okay"
-                                >
-                                    Handed Over
-                                </Button>
-                            )}
-                        </View>
-                    </View>
+    
+    const statusStyle = getStatusChipStyle(order.status);
+    const renderActions = () => {
+        if (order.status === 'New') {
+            return (
+                <View style={orderStyles.actionsRow}>
+                    <ActionButton title="Accept" color="#4CAF50" onPress={() => onStatusChange(order.id, 'Preparing')} />
+                    <ActionButton title="Reject" color="#F44336" onPress={() => onStatusChange(order.id, 'Rejected')} />
                 </View>
-            </Surface>
-        );
+            );
+        } else if (order.status === 'Preparing') {
+            return (
+                <ActionButton title="Mark Ready" color="#007AFF" onPress={() => onStatusChange(order.id, 'Ready')} />
+            );
+        } else if (order.status === 'Ready') {
+            return (<Text style={orderStyles.readyText}>Waiting for Driver Pickup...</Text>);
+        }
+        return <Text style={orderStyles.finalStatusText}>Status: {order.status}</Text>;
     };
 
     return (
-        <SafeAreaView style={styles.container}>
-            <View style={styles.header}>
-                <Text style={styles.title}>Orders</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
-                    <View style={styles.filterContainer}>
-                        {(Object.keys(STATUS_CONFIG) as OrderStatusFilter[]).map((status) => (
-                            <Chip
-                                key={status}
-                                selected={activeFilter === status}
-                                onPress={() => setActiveFilter(status)}
-                                style={[
-                                    styles.chip,
-                                    activeFilter === status && { backgroundColor: DesignSystem.colors.primary[600] }
-                                ]}
-                                textStyle={[
-                                    styles.chipText,
-                                    activeFilter === status && { color: 'white' }
-                                ]}
-                                showSelectedOverlay={false}
-                            >
-                                {STATUS_CONFIG[status].label}
-                            </Chip>
-                        ))}
-                    </View>
-                </ScrollView>
+        <TouchableOpacity 
+            style={orderStyles.card} 
+            // 🔑 ADDED: Navigation action on card press
+            onPress={() => onOpenDetails(order.id)} 
+        >
+            <View style={orderStyles.header}>
+                <Text style={orderStyles.orderId}>Order #{order.id}</Text>
+                <View style={[orderStyles.statusChip, { backgroundColor: statusStyle.backgroundColor }]}>
+                    <Text style={[orderStyles.statusChipText, { color: statusStyle.color }]}>{order.status}</Text>
+                </View>
             </View>
 
-            <ScrollView
-                contentContainerStyle={styles.content}
-                refreshControl={
-                    <RefreshControl
-                        refreshing={refreshing}
-                        onRefresh={onRefresh}
-                        colors={[DesignSystem.colors.primary[500]]}
+            <View style={orderStyles.detailRow}>
+                <Text style={orderStyles.label}>Customer:</Text>
+                <Text style={orderStyles.value}>{order.customer}</Text>
+            </View>
+            <View style={orderStyles.detailRow}>
+                <Text style={orderStyles.label}>Pickup Time:</Text>
+                <Text style={orderStyles.value}>{order.pickup_time}</Text>
+            </View>
+            <View style={orderStyles.detailRow}>
+                <Text style={orderStyles.label}>Total:</Text>
+                <Text style={orderStyles.totalValue}>${order.total.toFixed(2)}</Text>
+            </View>
+
+            <View style={orderStyles.itemsContainer}>
+                <Text style={orderStyles.itemsTitle}>Items:</Text>
+                {order.items.map((item, index) => (
+                    <Text key={index} style={orderStyles.itemText}>{item.qty}x {item.name}</Text>
+                ))}
+            </View>
+            
+            <View style={orderStyles.actionsContainer}>
+                {renderActions()}
+            </View>
+        </TouchableOpacity>
+    );
+};
+
+
+// --- Main Component ---
+export default function OrderManagementScreen() {
+    // 🔑 ADDED: Initialize router
+    const router = useRouter(); 
+    const [orders, setOrders] = useState<RestaurantOrder[]>([]);
+
+    useEffect(() => {
+        setOrders(getRestaurantOrders() as RestaurantOrder[]);
+    }, []);
+
+    const handleStatusChange = (id: string, newStatus: RestaurantOrder['status']) => {
+        setOrders(prevOrders => 
+            prevOrders.map(order => 
+                order.id === id ? { ...order, status: newStatus } : order
+            )
+        );
+        Alert.alert("Status Updated", `Order ${id} is now ${newStatus}.`);
+    };
+
+    // 🔑 ADDED: Navigation handler function
+    const handleOpenDetails = (id: string) => {
+        router.push({
+            // Path to the new details screen created in Task 8
+            pathname: '/restaurant-order-details', 
+            params: { orderId: id },
+        });
+    };
+
+    const newOrders = orders.filter(o => o.status === 'New');
+    const activeOrders = orders.filter(o => o.status === 'Preparing' || o.status === 'Ready');
+    const completedOrders = orders.filter(o => o.status === 'Delivered' || o.status === 'Rejected');
+
+    // 🔑 UPDATED: renderOrderList now passes the click handler
+    const renderOrderList = (title: string, list: RestaurantOrder[], onOpenDetails: (id: string) => void) => (
+        <View>
+            <Text style={styles.sectionTitle}>{title} ({list.length})</Text>
+            {list.length === 0 ? (
+                <Text style={styles.emptyText}>No {title.toLowerCase()}.</Text>
+            ) : (
+                list.map(order => (
+                    <OrderCard 
+                        key={order.id} 
+                        order={order} 
+                        onStatusChange={handleStatusChange} 
+                        onOpenDetails={onOpenDetails} // PASSED
                     />
-                }
-            >
-                {loading && !refreshing ? (
-                    <View style={styles.centerState}>
-                        <ActivityIndicator size={40} color={DesignSystem.colors.primary[500]} />
-                    </View>
-                ) : orders.length > 0 ? (
-                    <>
-                        <Text style={styles.sectionTitle}>
-                            {STATUS_CONFIG[activeFilter].label} Orders ({orders.length})
-                        </Text>
-                        {orders.map(renderOrderItem)}
-                    </>
-                ) : (
-                    <View style={styles.centerState}>
-                        <Surface style={styles.emptyState} elevation={1}>
-                            <MaterialCommunityIcons
-                                name={STATUS_CONFIG[activeFilter].icon}
-                                size={64}
-                                color={DesignSystem.colors.neutral[300]}
-                            />
-                            <Text style={styles.emptyTitle}>No {activeFilter} orders</Text>
-                            <Text style={styles.emptySubtitle}>
-                                {activeFilter === 'pending'
-                                    ? 'New orders will appear here'
-                                    : `You don't have any ${activeFilter} orders right now`}
-                            </Text>
-                        </Surface>
-                    </View>
-                )}
+                ))
+            )}
+        </View>
+    );
+
+    return (
+        <View style={styles.container}>
+            <AppHeader title="Order Management 🛎️" showBack={false} />
+            <ScrollView style={styles.content}>
+                
+                {/* 🔑 UPDATED: Passing handleOpenDetails to renderOrderList */}
+                {renderOrderList('New Orders', newOrders, handleOpenDetails)}
+                {renderOrderList('Active Orders', activeOrders, handleOpenDetails)}
+                {renderOrderList('Completed Orders', completedOrders, handleOpenDetails)}
+
+                <View style={{ height: 50 }} />
             </ScrollView>
-        </SafeAreaView>
+        </View>
     );
 }
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: DesignSystem.colors.background.primary,
+// --- Styles ---
+
+const orderStyles = StyleSheet.create({
+    card: {
+        backgroundColor: '#fff',
+        borderRadius: 10,
+        padding: 15,
+        marginBottom: 15,
+        shadowColor: '#000',
+        shadowOpacity: 0.1,
+        shadowRadius: 5,
+        elevation: 3,
     },
     header: {
-        padding: 20,
-        paddingBottom: 12,
-        backgroundColor: 'white',
-        borderBottomWidth: 1,
-        borderBottomColor: DesignSystem.colors.border.light,
-    },
-    title: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: DesignSystem.colors.text.primary,
-        marginBottom: 16,
-    },
-    filterScroll: {
-        flexGrow: 0,
-    },
-    filterContainer: {
-        flexDirection: 'row',
-        gap: 8,
-        paddingBottom: 8,
-    },
-    chip: {
-        marginRight: 8,
-        backgroundColor: DesignSystem.colors.neutral[100],
-    },
-    chipText: {
-        fontWeight: '600',
-    },
-    content: {
-        padding: 16,
-        flexGrow: 1,
-    },
-    centerState: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingTop: 60,
-    },
-    emptyState: {
-        padding: 40,
-        alignItems: 'center',
-        borderRadius: 16,
-        backgroundColor: 'white',
-        width: '100%',
-        maxWidth: 340,
-    },
-    emptyTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: DesignSystem.colors.text.primary,
-        marginTop: 16,
-        marginBottom: 8,
-    },
-    emptySubtitle: {
-        fontSize: 14,
-        color: DesignSystem.colors.text.secondary,
-        textAlign: 'center',
-    },
-    sectionTitle: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: DesignSystem.colors.text.primary,
-        marginBottom: 16,
-        marginLeft: 4,
-    },
-    orderCard: {
-        marginBottom: 16,
-        backgroundColor: 'white',
-        borderRadius: 12,
-        overflow: 'hidden',
-    },
-    statusBar: {
-        height: 4,
-    },
-    cardContent: {
-        padding: 16,
-    },
-    orderHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        marginBottom: 16,
-    },
-    orderInfo: {
-        flex: 1,
+        alignItems: 'center',
+        marginBottom: 10,
     },
     orderId: {
         fontSize: 18,
-        fontWeight: 'bold',
-        color: DesignSystem.colors.text.primary,
-        marginBottom: 4,
+        fontWeight: '900',
+        color: '#333',
     },
-    timeAgo: {
-        fontSize: 13,
-        color: DesignSystem.colors.text.secondary,
-    },
-    statusBadge: {
-        paddingHorizontal: 12,
+    statusChip: {
+        paddingHorizontal: 10,
         paddingVertical: 4,
+        borderRadius: 15,
     },
-    statusText: {
+    statusChipText: {
         fontSize: 12,
         fontWeight: 'bold',
-        textTransform: 'uppercase',
-        letterSpacing: 0.5,
     },
-    itemsSection: {
-        marginBottom: 16,
-    },
-    itemsHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 8,
-    },
-    itemsCount: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: DesignSystem.colors.text.secondary,
-        marginLeft: 6,
-    },
-    itemsList: {
-        backgroundColor: DesignSystem.colors.neutral[50],
-        borderRadius: 8,
-        padding: 12,
-    },
-    itemRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 6,
-    },
-    itemQuantity: {
-        fontSize: 14,
-        fontWeight: 'bold',
-        color: DesignSystem.colors.primary[600],
-        width: 32,
-    },
-    itemName: {
-        fontSize: 14,
-        color: DesignSystem.colors.text.primary,
-        flex: 1,
-    },
-    moreItems: {
-        fontSize: 13,
-        color: DesignSystem.colors.text.secondary,
-        fontStyle: 'italic',
-        marginTop: 4,
-    },
-    divider: {
-        backgroundColor: DesignSystem.colors.border.light,
-        marginVertical: 16,
-    },
-    footer: {
-        gap: 16,
-    },
-    totalSection: {
+    detailRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
+        paddingVertical: 3,
+        borderBottomWidth: 1,
+        borderBottomColor: '#fafafa',
+    },
+    label: {
+        fontSize: 14,
+        color: '#777',
+    },
+    value: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#333',
+    },
+    totalValue: {
+        fontSize: 16,
+        fontWeight: '800',
+        color: '#4CAF50', // Green for money
+    },
+    itemsContainer: {
+        marginTop: 10,
+        paddingTop: 5,
+        borderTopWidth: 1,
+        borderTopColor: '#eee',
+    },
+    itemsTitle: {
+        fontSize: 14,
+        fontWeight: '700',
+        marginBottom: 5,
+        color: '#333',
+    },
+    itemText: {
+        fontSize: 13,
+        color: '#666',
+        marginLeft: 5,
+    },
+    actionsContainer: {
+        marginTop: 15,
+    },
+    actionsRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+    },
+    actionButton: {
+        paddingVertical: 10,
+        borderRadius: 8,
+        flex: 1,
+        marginHorizontal: 5,
         alignItems: 'center',
     },
-    totalLabel: {
-        fontSize: 14,
-        color: DesignSystem.colors.text.secondary,
-        fontWeight: '500',
-    },
-    totalAmount: {
-        fontSize: 20,
+    actionButtonText: {
+        color: '#fff',
+        fontSize: 15,
         fontWeight: 'bold',
-        color: DesignSystem.colors.text.primary,
     },
-    actions: {
-        flexDirection: 'row',
-        gap: 12,
+    readyText: {
+        textAlign: 'center',
+        fontSize: 15,
+        fontWeight: '600',
+        color: '#FF9800',
+        padding: 5
     },
-    acceptButton: {
-        flex: 2,
-        backgroundColor: DesignSystem.colors.primary[600],
-        borderRadius: 10,
-    },
-    rejectButton: {
-        flex: 1,
-        borderColor: DesignSystem.colors.error,
-        borderRadius: 10,
-    },
-    primaryButton: {
-        flex: 1,
-        backgroundColor: DesignSystem.colors.primary[600],
-        borderRadius: 10,
-    },
-    actionButtonContent: {
-        height: 44,
-    },
+    finalStatusText: {
+        textAlign: 'center',
+        fontSize: 15,
+        fontWeight: '600',
+        color: '#777',
+        padding: 5
+    }
+});
+
+const styles = StyleSheet.create({ 
+    container: { flex: 1, backgroundColor: '#f5f5f5' },
+    content: { padding: 15 },
+    sectionTitle: { fontSize: 16, fontWeight: '700', color: '#333', marginBottom: 10, marginTop: 10 },
+    emptyText: { textAlign: 'center', color: '#999', paddingVertical: 15, backgroundColor: '#fff', borderRadius: 8, marginBottom: 15 }
 });

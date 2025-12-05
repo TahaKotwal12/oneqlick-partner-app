@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, RefreshControl, Alert, LayoutAnimation, Platform, UIManager } from 'react-native';
-import { Text, FAB, List, Switch, ActivityIndicator, Surface, Searchbar, Chip } from 'react-native-paper';
+// 1. ADD NECESSARY IMPORTS FOR MODAL AND EDIT BUTTON
+import { View, StyleSheet, ScrollView, RefreshControl, Alert, LayoutAnimation, Platform, UIManager, TouchableOpacity } from 'react-native';
+import { Text, FAB, List, Switch, ActivityIndicator, Surface, Searchbar, Chip, Modal, Portal, TextInput, Button, IconButton } from 'react-native-paper'; // UPDATED IMPORTS
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { GlobalStyles } from '../../styles/globalStyles';
 import { DesignSystem } from '../../constants/designSystem';
@@ -20,6 +21,12 @@ export default function MenuScreen() {
     const [togglingId, setTogglingId] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+    
+    // 2. NEW STATES for Edit Modal
+    const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+    const [editingItem, setEditingItem] = useState<FoodItem | null>(null);
+    const [modalFormData, setModalFormData] = useState({ name: '', price: '0.00' });
+
 
     const fetchMenu = async () => {
         try {
@@ -69,6 +76,41 @@ export default function MenuScreen() {
         }
     };
 
+    // 3. HANDLER FUNCTIONS FOR MODAL
+    const openEditModal = (item: FoodItem) => {
+        setEditingItem(item);
+        setModalFormData({ name: item.name, price: item.price.toFixed(2) });
+        setIsEditModalVisible(true);
+    };
+
+    const closeEditModal = () => {
+        setEditingItem(null);
+        setIsEditModalVisible(false);
+    };
+
+    const handleEditSubmit = () => {
+        if (!editingItem) return;
+
+        const newName = modalFormData.name.trim();
+        const newPrice = parseFloat(modalFormData.price);
+
+        if (!newName || isNaN(newPrice) || newPrice < 0) {
+            Alert.alert('Invalid Input', 'Please enter a valid name and price.');
+            return;
+        }
+
+        // Updates local state instantly
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
+        setMenuItems(prev => prev.map(item =>
+            item.food_item_id === editingItem.food_item_id
+                ? { ...item, name: newName, price: newPrice }
+                : item
+        ));
+
+        closeEditModal();
+    };
+    // END HANDLER FUNCTIONS FOR MODAL
+
     const toggleCategory = (category: string) => {
         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
         setExpandedCategories(prev => {
@@ -108,6 +150,14 @@ export default function MenuScreen() {
             <View style={styles.itemContent}>
                 <View style={styles.itemInfo}>
                     <View style={styles.itemHeader}>
+                        {/* 4. ADD EDIT BUTTON */}
+                        <TouchableOpacity onPress={() => openEditModal(item)} style={styles.editButtonContainer}>
+                            <MaterialCommunityIcons
+                                name="pencil"
+                                size={18}
+                                color={DesignSystem.colors.primary[600]}
+                            />
+                        </TouchableOpacity>
                         <Text style={styles.itemName} numberOfLines={1}>{item.name}</Text>
                         {item.is_veg && (
                             <View style={styles.vegBadge}>
@@ -265,6 +315,48 @@ export default function MenuScreen() {
                 label="Add Item"
                 color="white"
             />
+            
+            {/* 5. EDIT MODAL COMPONENT */}
+            <Portal>
+                <Modal 
+                    visible={isEditModalVisible} 
+                    onDismiss={closeEditModal} 
+                    contentContainerStyle={styles.modalContent}
+                >
+                    <Text style={styles.modalTitle}>Edit Menu Item</Text>
+                    
+                    <TextInput
+                        label="Item Name"
+                        value={modalFormData.name}
+                        onChangeText={(name) => setModalFormData(p => ({ ...p, name }))}
+                        mode="outlined"
+                        style={styles.modalInput}
+                    />
+
+                    <TextInput
+                        label="Price ($)"
+                        value={modalFormData.price}
+                        onChangeText={(price) => setModalFormData(p => ({ ...p, price }))}
+                        keyboardType="numeric"
+                        mode="outlined"
+                        style={styles.modalInput}
+                    />
+                    
+                    <View style={styles.modalActions}>
+                        <Button onPress={closeEditModal} mode="outlined">
+                            Cancel
+                        </Button>
+                        <Button 
+                            onPress={handleEditSubmit} 
+                            mode="contained" 
+                            style={styles.saveButton}
+                        >
+                            Save Changes
+                        </Button>
+                    </View>
+                </Modal>
+            </Portal>
+
         </SafeAreaView>
     );
 }
@@ -406,11 +498,16 @@ const styles = StyleSheet.create({
         marginBottom: 6,
         gap: 8,
     },
+    // 6. ADD NEW STYLES
+    editButtonContainer: {
+        marginRight: 8,
+        padding: 4,
+    },
     itemName: {
         fontSize: 16,
         fontWeight: 'bold',
         color: DesignSystem.colors.text.primary,
-        flex: 1,
+        // Removed flex: 1 here to allow space for the edit button to the left
     },
     vegBadge: {
         width: 18,
@@ -477,5 +574,31 @@ const styles = StyleSheet.create({
         bottom: 0,
         backgroundColor: DesignSystem.colors.primary[600],
         borderRadius: 16,
+    },
+    // 6. NEW STYLES FOR EDIT MODAL
+    modalContent: {
+        backgroundColor: 'white',
+        padding: 20,
+        margin: 20,
+        borderRadius: 12,
+    },
+    modalTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        marginBottom: 20,
+        color: DesignSystem.colors.text.primary,
+    },
+    modalInput: {
+        marginBottom: 15,
+        backgroundColor: 'white',
+    },
+    modalActions: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        marginTop: 10,
+        gap: 10,
+    },
+    saveButton: {
+        minWidth: 120,
     },
 });
