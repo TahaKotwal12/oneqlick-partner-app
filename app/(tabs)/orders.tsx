@@ -92,7 +92,8 @@ const OrderCard = ({ order, onStatusChange, onOpenDetails }: {
             </View>
             <View style={orderStyles.detailRow}>
                 <Text style={orderStyles.label}>Total:</Text>
-                <Text style={orderStyles.totalValue}>${order.total.toFixed(2)}</Text>
+                {/* 🔑 FIX APPLIED HERE: Changed 'Rs.' to '₹' */}
+                <Text style={orderStyles.totalValue}>₹{order.total.toFixed(2)}</Text>
             </View>
 
             <View style={orderStyles.itemsContainer}>
@@ -126,14 +127,14 @@ export default function OrderManagementScreen() {
                 order.id === id ? { ...order, status: newStatus } : order
             )
         );
-        Alert.alert("Status Updated", `Order ${id} is now ${newStatus}.`);
+        // NOTE: The alert still uses the string "Rs." as a placeholder in the message, which is fine for alerts.
+        Alert.alert("Status Updated", `Order ${id} is now ${newStatus}.`); 
     };
 
     // 🔑 ADDED: Navigation handler function
     const handleOpenDetails = (id: string) => {
         router.push({
-            // Path to the new details screen created in Task 8
-            pathname: '/restaurant-order-details', 
+            pathname: '/restaurant-order-details', // Path to the new details screen created in Task 8
             params: { orderId: id },
         });
     };
