@@ -55,18 +55,27 @@ oneQlick/
 │   └── fonts/                  # Custom fonts
 └── package.json                # Dependencies and scripts
 ```
-## Mock Data Setup
+## 🚀 Quick Preview & Reviewer Instructions
 
-We are using mock JSON files for rapid frontend development. All screen data is initially loaded from the `/src/mock` directory.
+This section provides guidelines for setting up the project and testing specific partner roles (Delivery vs. Restaurant).
 
-### How to Use/Disable Mocks
+### 1. Project Setup and Running
+1.  **Start the Development Server:** In your terminal, navigate to the project root and run:
+    ```bash
+    npm start
+    # OR
+    expo start
+    ```
+2.  **Preview on Device:** Scan the displayed QR code using the **Expo Go** app on your physical iOS or Android device.
 
-The mock data utility is controlled by the `USE_MOCK` constant in `utils/mock.ts`.
+### 2. Testing Partner Roles
 
--   **To use mock data:** Set `export const USE_MOCK = true;`
--   **To switch to real API calls (future):** Set `export const USE_MOCK = false;`
+The application dynamically switches tabs based on the user role defined in the mock file. To test specific user flows, you must manually edit the `role` field in your **`src/mock/profile.json`** file to match the desired partner type.
 
-Ensure all features developed initially use the wrappers (e.g., `getDeliveryOrders()`) from `utils/mock.ts` to easily transition to real API endpoints later.
+| Role to Test | Login Simulation | Required `profile.json` value | Tabs Visible (Order) |
+| :--- | :--- | :--- | :--- |
+| **Restaurant Partner** | `restaurant@oneqlick.com` | `"role": "restaurant_owner"` | Orders, Menu, Earnings, Profile, Activity |
+| **Delivery Partner** | `partner@oneqlick.com` | `"role": "delivery_partner"` | Deliveries, Earnings, Profile, Activity |
 
 ## 🛠️ Technology Stack
 
@@ -275,4 +284,3 @@ For support and questions:
 
 **Built with ❤️ for rural Indian communities** # oneQlick-User-App
 "# oneqlick-partner-app" 
-
