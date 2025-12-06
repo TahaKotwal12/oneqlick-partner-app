@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, Alert, Switch, TouchableOpacity } from 'react-native';
+import { useRouter } from 'expo-router'; // 1. IMPORT useRouter
 import AppHeader from '../../components/common/AppHeader'; 
 import { MaterialIcons } from '@expo/vector-icons';
 // NOTE: Ensure getProfile() returns the expected mock structure
@@ -29,6 +30,7 @@ const MetricCard = ({ title, value, icon, color }: { title: string, value: strin
 
 // --- Main Component ---
 export default function ProfileScreen() {
+    const router = useRouter(); // 2. INITIALIZE useRouter
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [isOnline, setIsOnline] = useState(false);
     const [loading, setLoading] = useState(true);
@@ -121,8 +123,8 @@ export default function ProfileScreen() {
                 <View style={{ marginTop: 20 }}>
                     <TouchableOpacity 
                         style={profileStyles.linkItem}
-                        // 🔑 ADDED: OnPress handler
-                        onPress={() => Alert.alert("Navigation", "Settings screen coming soon!")} 
+                        // 🔑 UPDATED: Use router.push for navigation
+                        onPress={() => router.push('/settings')} 
                     >
                         <MaterialIcons name="settings" size={24} color="#666" />
                         <Text style={profileStyles.linkText}>Settings</Text>

@@ -1,19 +1,19 @@
-// oneQlick/app/(tabs)/_layout.tsx 
+// oneQlick/app/(tabs)/_layout.tsx
 
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useAuth } from '../../hooks/useAuthZustand';
-import { useTheme } from 'react-native-paper';
-import { useSafeAreaInsets } from 'react-native-safe-area-context'; 
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TabLayout() {
   const { user } = useAuth();
-  const theme = useTheme();
-  const insets = useSafeAreaInsets(); 
+  const insets = useSafeAreaInsets();
 
-  const isRestaurant = user?.role === 'restaurant_owner';
-  const isDelivery = user?.role === 'delivery_partner'; 
+  const role = user?.role?.toLowerCase();
+
+  const isRestaurant = role === 'restaurant_owner' || role === 'restaurant';
+  const isDelivery = role === 'delivery_partner' || role === 'delivery';
 
   return (
     <Tabs
@@ -25,8 +25,8 @@ export default function TabLayout() {
           backgroundColor: 'white',
           borderTopColor: '#f0f0f0',
           elevation: 8,
-          height: 75 + insets.bottom, 
-          paddingBottom: 8 + insets.bottom, 
+          height: 75 + insets.bottom,
+          paddingBottom: 8 + insets.bottom,
           paddingTop: 8,
         },
         tabBarLabelStyle: {
@@ -35,80 +35,91 @@ export default function TabLayout() {
         },
       }}
     >
-      {/* Index - Hidden */}
-      <Tabs.Screen
-        name="index"
-        options={{
-          href: null,
-        }}
-      />
 
-      {/* 1. RESTAURANT STARTING TABS (Conditional) */}
-      {isRestaurant ? (
-        // SHOW: Orders and Menu for Restaurant Owner
-        <>
-          <Tabs.Screen
-            name="orders"
-            options={{
-              title: 'Orders',
-              tabBarIcon: ({ color }) => <MaterialIcons name="list-alt" size={24} color={color} />,
-            }}
-          />
-          <Tabs.Screen
-            name="menu"
-            options={{
-              title: 'Menu',
-              tabBarIcon: ({ color }) => <MaterialIcons name="restaurant-menu" size={24} color={color} />,
-            }}
-          />
-        </>
-      ) : (
-        // 🔑 FIX: HIDE Orders and Menu for Delivery Partner/Other Roles
-        <>
-          <Tabs.Screen name="orders" options={{ href: null }} />
-          <Tabs.Screen name="menu" options={{ href: null }} />
-        </>
-      )}
+      {/* Hidden index */}
+      <Tabs.Screen name="index" options={{ href: null }} />
 
-      {/* 2. DELIVERY STARTING TABS (Conditional) */}
+      {/* 1 → DELIVERIES */}
       {isDelivery ? (
         <Tabs.Screen
           name="deliveries"
           options={{
             title: 'Deliveries',
-            tabBarIcon: ({ color }) => <MaterialIcons name="delivery-dining" size={24} color={color} />,
+            tabBarIcon: ({ color }) => (
+              <MaterialIcons name="delivery-dining" size={26} color={color} />
+            ),
           }}
         />
       ) : (
-        // Hide the Deliveries tab for the Restaurant Owner/Other Roles
         <Tabs.Screen name="deliveries" options={{ href: null }} />
       )}
-      
-      {/* 3. COMMON TABS - Earnings and Profile */}
+
+      {/* 2 → EARNINGS */}
       <Tabs.Screen
         name="earnings"
         options={{
           title: 'Earnings',
-          tabBarIcon: ({ color }) => <MaterialIcons name="attach-money" size={24} color={color} />,
+          tabBarIcon: ({ color }) => (
+            <MaterialIcons name="attach-money" size={26} color={color} />
+          ),
         }}
       />
 
+      {/* 3 → ORDERS */}
+      <Tabs.Screen
+        name="orders"
+        options={{
+          title: 'Orders',
+          tabBarIcon: ({ color }) => (
+            <MaterialIcons name="list-alt" size={26} color={color} />
+          ),
+        }}
+      />
+
+      {/* 4 → MENU */}
+      <Tabs.Screen
+        name="menu"
+        options={{
+          title: 'Menu',
+          tabBarIcon: ({ color }) => (
+            <MaterialIcons name="restaurant-menu" size={26} color={color} />
+          ),
+        }}
+      />
+
+      {/* 5 → ACTIVITY */}
+      <Tabs.Screen
+        name="activity"
+        options={{
+          title: 'Activity',
+          tabBarIcon: ({ color }) => (
+            <MaterialIcons name="dashboard" size={26} color={color} />
+          ),
+        }}
+      />
+
+      {/* 6 → PROFILE */}
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ color }) => <MaterialIcons name="person" size={24} color={color} />,
+          tabBarIcon: ({ color }) => (
+            <MaterialIcons name="person" size={26} color={color} />
+          ),
         }}
       />
 
-      {/* 4. ACTIVITY TAB (Always Last) */}
+      {/* 7 → SETTINGS */}
       <Tabs.Screen
-          name="activity" 
-          options={{
-            title: 'Activity', 
-            tabBarIcon: ({ color }) => <MaterialIcons name="dashboard" size={24} color={color} />,
-          }}
+        name="settings"
+        options={{
+          title: 'Settings',
+          tabBarIcon: ({ color }) => (
+            <MaterialIcons name="settings" size={26} color={color} />
+          ),
+        }}
       />
+
     </Tabs>
   );
 }
