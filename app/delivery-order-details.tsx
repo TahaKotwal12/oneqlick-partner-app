@@ -1,4 +1,4 @@
-// oneQlick/app/delivery-order-details.tsx (TASK 10 INTEGRATION - FINAL)
+// oneQlick/app/delivery-order-details.tsx (FIXED: Simplified Status Flow)
 
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Alert, TouchableOpacity } from 'react-native';
@@ -7,7 +7,6 @@ import AppHeader from '../components/common/AppHeader';
 import { getDeliveryOrders } from '../utils/mock'; 
 import { MaterialIcons } from '@expo/vector-icons'; 
 import { useSafeAreaInsets } from 'react-native-safe-area-context'; 
-// 🔑 IMPORT NEW REUSABLE COMPONENT:
 import MapPlaceholderComponent from '../components/common/MapPlaceholder'; 
 
 
@@ -58,8 +57,6 @@ interface InfoRowProps {
 }
 
 // ----------------------------------------------------------------------
-
-// --- OLD MAP HELPER AND mapStyles REMOVED FROM THIS LOCATION ---
 
 // --- Helper Components for Clean Code (DEFINED ONCE) ---
 
@@ -121,7 +118,7 @@ const DeliveryOrderDetailsScreen = () => {
       Alert.alert("Status Updated", `Order ${orderId} is now: ${newStatus}`);
     };
 
-    // getActionButtons inside the component scope
+    // 🔑 UPDATED: getActionButtons with SIMPLIFIED flow (Removed redundant step)
     const getActionButtons = () => {
         if (status === 'Ready for Pickup') {
             return (
@@ -134,8 +131,16 @@ const DeliveryOrderDetailsScreen = () => {
         } else if (status === 'Accepted' || status === 'Waiting for Pickup') {
             return (
                 <ActionButton 
-                    title="Start Trip (Pick Up)" 
-                    onPress={() => handleAction('In Transit')} 
+                    title="Arrived at Pickup" 
+                    onPress={() => handleAction('Arrived at Pickup')} 
+                    color="#FF9800" // Orange
+                />
+            );
+        } else if (status === 'Arrived at Pickup') {
+            return (
+                <ActionButton 
+                    title="Picked Up (Start Trip)" 
+                    onPress={() => handleAction('In Transit')} // Directly moves to In Transit
                     color="#2196F3" // Blue
                 />
             );
@@ -144,7 +149,7 @@ const DeliveryOrderDetailsScreen = () => {
                 <ActionButton 
                     title="Delivered" 
                     onPress={() => handleAction('Delivered')} 
-                    color="#F44336" // Red
+                    color="#F44336" // Red/Final
                 />
             );
         }

@@ -64,6 +64,7 @@ export default function RestaurantOrderDetailsScreen() {
             setStatus(selectedOrder.status);
             setLocalNotes(selectedOrder.notes || ''); 
         } else {
+            // Fallback for testing if ID is missing (Use first order)
             setOrder(allOrders[0] || null);
             setStatus(allOrders[0]?.status || 'Error: Order Not Found');
             setLocalNotes(allOrders[0]?.notes || '');
@@ -73,6 +74,7 @@ export default function RestaurantOrderDetailsScreen() {
     // 2. Checklist: Add note (local save) - Persists for the session
     const handleSaveNotes = () => {
         if (order) {
+            // Updates local state (Acceptance: Fully displays order + saves notes)
             setOrder({ ...order, notes: localNotes });
             Alert.alert("Notes Saved", "Internal notes updated successfully for this session.");
         }
@@ -103,7 +105,9 @@ export default function RestaurantOrderDetailsScreen() {
                 <View style={styles.card}>
                     <DetailRow icon="person" label="Customer" value={order.customer} />
                     <DetailRow icon="access-time" label="Pickup Time" value={order.pickup_time} />
-                    <DetailRow icon="payment" label="Order Total" value={`$${order.total.toFixed(2)}`} />
+                    
+                    {/* 🔑 FIX APPLIED HERE: Changed '$' to '₹' */}
+                    <DetailRow icon="payment" label="Order Total" value={`₹${order.total.toFixed(2)}`} />
                 </View>
 
                 {/* Checklist: Items list. */}
