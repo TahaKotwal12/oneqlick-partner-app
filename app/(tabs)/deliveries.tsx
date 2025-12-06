@@ -1,13 +1,14 @@
-// oneQlick/app/(tabs)/deliveries.tsx (Notifications Link Fix)
+// oneQlick/app/(tabs)/deliveries.tsx (FIXED: Text Component Error in Availability Toggle)
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, ScrollView, TouchableOpacity, Switch, Alert } from 'react-native';
+import { View, Text, StyleSheet, FlatList, ScrollView, TouchableOpacity, Switch, Alert, Text as RNText } from 'react-native'; // 🔑 ADDED RNText alias
 import { useRouter } from 'expo-router'; 
 import AppHeader from '../../components/common/AppHeader'; 
 import { getDeliveryOrders, getProfile } from '../../utils/mock'; 
 import { MaterialIcons } from '@expo/vector-icons'; 
 
 // *** Define TypeScript Interfaces ***
+// ... (Interfaces remain the same) ...
 interface LocationDetail {
     name: string;
     address: string;
@@ -38,21 +39,21 @@ interface UserProfile {
 
 // --- Helper Component: Availability Toggle (Types Applied) ---
 const AvailabilityToggle = ({ partnerName, isOnline, toggleOnline }: { partnerName: string, isOnline: boolean, toggleOnline: () => void }) => (
-    <View style={styles.toggleContainer}>
-    <Text style={styles.partnerName}>{partnerName}</Text>
-    <View style={styles.toggleRow}>
-        <Text style={[styles.statusText, { color: isOnline ? '#4CAF50' : '#F44336' }]}>
-        You are {isOnline ? 'Online' : 'Offline'}
-        </Text>
-        <Switch
-        trackColor={{ false: "#767577", true: "#4CAF50" }}
-        thumbColor={isOnline ? "#f4f3f4" : "#f4f3f4"}
-        ios_backgroundColor="#3e3e3e"
-        onValueChange={toggleOnline}
-        value={isOnline}
-        />
-    </View>
-    </View>
+    <View style={styles.toggleContainer}>
+    <Text style={styles.partnerName}>{partnerName}</Text>
+    <View style={styles.toggleRow}>
+        <Text style={[styles.statusText, { color: isOnline ? '#4CAF50' : '#F44336' }]}>
+        You are {isOnline ? 'Online' : 'Offline'}
+        </Text>
+        <Switch
+        trackColor={{ false: "#767577", true: "#4CAF50" }}
+        thumbColor={isOnline ? "#f4f3f4" : "#f4f3f4"}
+        ios_backgroundColor="#3e3e3e"
+        onValueChange={toggleOnline}
+        value={isOnline}
+        />
+    </View>
+    </View>
 );
 
 // --- Helper Component: Order List Item (Types Applied) ---
@@ -120,11 +121,11 @@ export default function DeliveryDashboardScreen() {
         setIsOnline(prev => !prev);
         Alert.alert("Status Change", `Switched to ${!isOnline ? 'Online' : 'Offline'}`);
     };
-    
-    // 🔑 ADDED: Navigation handler for Notifications
-    const handleOpenNotifications = () => {
-        router.push('/notifications'); // Navigates to the file located at app/notifications.tsx
-    };
+    
+    // 🔑 ADDED: Navigation handler for Notifications
+    const handleOpenNotifications = () => {
+        router.push('/notifications'); // Navigates to the file located at app/notifications.tsx
+    };
 
     const handleOpenDetails = (id: string) => { 
         // FIX: Added '/' to the pathname to reference the route from the root of the app.
@@ -138,13 +139,12 @@ export default function DeliveryDashboardScreen() {
 
     return (
         <View style={styles.container}>
-            {/* 🔑 FIXED: Connect the Notifications Bell to the handler */}
         <AppHeader
             title="Deliveries"
             rightAction={{ 
-                iconName: 'notifications', 
-                onPress: handleOpenNotifications // This connects the bell icon
-            }}
+                iconName: 'notifications', 
+                onPress: handleOpenNotifications // This connects the bell icon
+            }}
         />
         
         <ScrollView style={styles.content}>
@@ -192,3 +192,4 @@ const styles = StyleSheet.create({
     openButtonText: { color: '#fff', fontWeight: 'bold' },
     emptyText: { textAlign: 'center', marginTop: 20, color: '#999' }
 });
+
