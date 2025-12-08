@@ -1,29 +1,42 @@
-// oneQlick/app/(tabs)/_layout.tsx
+// oneQlick/app/(tabs)/_layout.tsx (THEME-AWARE)
 
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useAuth } from '../../hooks/useAuthZustand';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+// 👇 IMPORT THEME CONTEXT
+import { useTheme } from '../../contexts/ThemeContext'; 
 
 export default function TabLayout() {
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
+  // 👇 USE THEME HOOK
+  const { theme } = useTheme(); 
 
+  const isDark = theme === 'dark';
   const role = user?.role?.toLowerCase();
 
   const isRestaurant = role === 'restaurant_owner' || role === 'restaurant';
   const isDelivery = role === 'delivery_partner' || role === 'delivery';
 
+  // Define theme colors
+  const TAB_BAR_BACKGROUND = isDark ? '#1E1E1E' : 'white';
+  const TAB_BORDER_COLOR = isDark ? '#333333' : '#f0f0f0';
+  const ACTIVE_COLOR = isDark ? '#BB86FC' : '#4F46E5'; // Purple for dark, Blue for light
+  const INACTIVE_COLOR = isDark ? '#AAAAAA' : '#6B7280';
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#4F46E5',
-        tabBarInactiveTintColor: '#6B7280',
+        // 👇 APPLY DYNAMIC COLORS
+        tabBarActiveTintColor: ACTIVE_COLOR,
+        tabBarInactiveTintColor: INACTIVE_COLOR,
+        
         tabBarStyle: {
-          backgroundColor: 'white',
-          borderTopColor: '#f0f0f0',
+          backgroundColor: TAB_BAR_BACKGROUND, // 🔑 DYNAMIC BACKGROUND
+          borderTopColor: TAB_BORDER_COLOR, // 🔑 DYNAMIC BORDER
           elevation: 8,
           height: 75 + insets.bottom,
           paddingBottom: 8 + insets.bottom,

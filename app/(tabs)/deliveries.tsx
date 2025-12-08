@@ -1,6 +1,5 @@
-// oneQlick/app/(tabs)/deliveries.tsx (FIXED: Text Component Error in Availability Toggle)
+// oneQlick/app/(tabs)/deliveries.tsx (I18N and THEME-AWARE)
 
-// 💥 FIX: Removed the conflicting direct 'Text' import, keeping only the aliased 'RNText'.
 import React, { useState, useEffect } from 'react';
 import { 
     View, 
@@ -9,26 +8,21 @@ import {
     ScrollView, 
     TouchableOpacity, 
     Switch, 
-    Alert 
+    Alert,
+    Text as RNText
 } from 'react-native';
-import { Text as RNText } from 'react-native';  // ✅ FIX APPLIED HERE
 
 import { useRouter } from 'expo-router'; 
 import AppHeader from '../../components/common/AppHeader'; 
 import { getDeliveryOrders, getProfile } from '../../utils/mock'; 
 import { MaterialIcons } from '@expo/vector-icons'; 
+import { useTheme } from '../../contexts/ThemeContext'; 
+import { useLanguage } from '../../contexts/LanguageContext'; // 👈 I18N IMPORT
+
 
 // *** Define TypeScript Interfaces ***
-interface LocationDetail {
-    name: string;
-    address: string;
-}
-
-interface OrderItem {
-    name: string;
-    qty: number;
-}
-
+interface LocationDetail { name: string; address: string; }
+interface OrderItem { name: string; qty: number; }
 interface DeliveryOrder {
     id: string;
     status: string;
@@ -38,29 +32,26 @@ interface DeliveryOrder {
     items: OrderItem[];
     payment_type: string;
 }
-
-interface UserProfile {
-    id: string;
-    name: string;
-    is_online: boolean;
-}
+interface UserProfile { id: string; name: string; is_online: boolean; }
 
 // --- Helper Component: Availability Toggle ---
 const AvailabilityToggle = ({
     partnerName,
     isOnline,
-    toggleOnline
-}: { partnerName: string, isOnline: boolean, toggleOnline: () => void }) => (
+    toggleOnline,
+    styles,
+    t
+}: { partnerName: string, isOnline: boolean, toggleOnline: () => void, styles: any, t: (key: string) => string }) => (
     <View style={styles.toggleContainer}>
-        <RNText style={styles.partnerName}>{partnerName}</RNText>
+        <RNText style={styles.partnerName}>{t('welcome_delivery_partner')}: {partnerName}</RNText>
         <View style={styles.toggleRow}>
             <RNText style={[styles.statusText, { color: isOnline ? '#4CAF50' : '#F44336' }]}>
-                You are {isOnline ? 'Online' : 'Offline'}
+                {t('you_are')} {isOnline ? t('online') : t('offline')}
             </RNText>
             <Switch
-                trackColor={{ false: "#767577", true: "#4CAF50" }}
-                thumbColor="#f4f3f4"
-                ios_backgroundColor="#3e3e3e"
+                trackColor={{ false: styles.switchTrackFalse.color, true: "#4CAF50" }}
+                thumbColor={styles.switchThumb.color}
+                ios_backgroundColor={styles.switchIOSBackground.color}
                 onValueChange={toggleOnline}
                 value={isOnline}
             />
@@ -69,7 +60,8 @@ const AvailabilityToggle = ({
 );
 
 // --- Helper Component: Order List Item ---
-const OrderListItem = ({ item, onOpen }: { item: DeliveryOrder, onOpen: (id: string) => void }) => {
+const OrderListItem = ({ item, onOpen, styles, t }: { item: DeliveryOrder, onOpen: (id: string) => void, styles: any, t: (key: string) => string }) => {
+    
     const getStatusChipStyle = (status: string) => {
         switch (status) {
             case 'Ready for Pickup': return { backgroundColor: '#FFC107', color: '#000' };
@@ -80,31 +72,33 @@ const OrderListItem = ({ item, onOpen }: { item: DeliveryOrder, onOpen: (id: str
     };
 
     const statusStyle = getStatusChipStyle(item.status);
+    const translatedStatus = t(item.status.toLowerCase().replace(/\s/g, '_')); 
+    const translatedPayment = t(item.payment_type.toLowerCase().replace(/\s/g, '_'));
 
     return (
         <TouchableOpacity style={styles.listItem} onPress={() => onOpen(item.id)}>
             <View style={styles.row}>
-                <RNText style={styles.orderId}>Order ID: {item.id}</RNText>
-                <RNText style={styles.amountText}>₹{item.amount.toFixed(2)}</RNText>
+                <RNText style={styles.orderId}>{t('order_id')}: {item.id}</RNText>
+                <RNText style={styles.amountText}>₹{item.amount.toFixed(2)} ({translatedPayment})</RNText>
             </View>
 
             <View style={styles.addressRow}>
-                <MaterialIcons name="store" size={16} color="#777" />
-                <RNText style={styles.addressLine}> Pickup: {item.pickup.name}</RNText>
+                <MaterialIcons name="store" size={16} color={styles.iconColor.color} />
+                <RNText style={styles.addressLine}> {t('pickup')}: {item.pickup.name}</RNText>
             </View>
 
             <View style={styles.addressRow}>
-                <MaterialIcons name="pin-drop" size={16} color="#777" />
-                <RNText style={styles.addressLine}> Drop: {item.drop.name}</RNText>
+                <MaterialIcons name="pin-drop" size={16} color={styles.iconColor.color} />
+                <RNText style={styles.addressLine}> {t('drop')}: {item.drop.name}</RNText>
             </View>
 
             <View style={[styles.row, { marginTop: 10 }]}>
                 <View style={[styles.statusChip, { backgroundColor: statusStyle.backgroundColor }]}>
-                    <RNText style={[styles.statusChipText, { color: statusStyle.color }]}>{item.status}</RNText>
+                    <RNText style={[styles.statusChipText, { color: statusStyle.color }]}>{translatedStatus}</RNText>
                 </View>
 
                 <TouchableOpacity onPress={() => onOpen(item.id)} style={styles.openButton}>
-                    <RNText style={styles.openButtonText}>Open</RNText>
+                    <RNText style={styles.openButtonText}>{t('open')}</RNText>
                 </TouchableOpacity>
             </View>
         </TouchableOpacity>
@@ -114,6 +108,8 @@ const OrderListItem = ({ item, onOpen }: { item: DeliveryOrder, onOpen: (id: str
 // --- Main Dashboard Component ---
 export default function DeliveryDashboardScreen() {
     const router = useRouter();
+    const { theme } = useTheme(); 
+    const { t } = useLanguage(); 
 
     const [orders, setOrders] = useState<DeliveryOrder[]>([]);
     const [profile, setProfile] = useState<UserProfile | {}>({});
@@ -129,8 +125,9 @@ export default function DeliveryDashboardScreen() {
     }, []);
 
     const toggleAvailability = () => {
-        setIsOnline(prev => !prev);
-        Alert.alert("Status Change", `Switched to ${!isOnline ? 'Online' : 'Offline'}`);
+        const newState = !isOnline;
+        setIsOnline(newState);
+        Alert.alert(t("status_change"), `${t("switched_to")} ${newState ? t('online') : t('offline')}`);
     };
 
     const handleOpenNotifications = () => {
@@ -144,60 +141,107 @@ export default function DeliveryDashboardScreen() {
         });
     };
 
-    const partnerName = (profile as UserProfile)?.name || 'Delivery Partner';
+    const partnerName = (profile as UserProfile)?.name || t('delivery_partner_default'); 
+
+    // 🔑 Dynamic Styles
+    const dynamicStyles = StyleSheet.create({
+        container: { 
+            flex: 1, 
+            backgroundColor: theme === 'dark' ? '#121212' : '#f5f5f5' 
+        },
+        content: { padding: 10 },
+        toggleContainer: { 
+            backgroundColor: theme === 'dark' ? '#1E1E1E' : '#fff', 
+            padding: 15, 
+            borderRadius: 8, 
+            marginBottom: 10, 
+            marginTop: 5 
+        },
+        toggleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+        partnerName: { 
+            fontSize: 18, 
+            fontWeight: 'bold', 
+            marginBottom: 5,
+            color: theme === 'dark' ? '#FFFFFF' : '#000' 
+        },
+        statusText: { fontWeight: '600', fontSize: 16 },
+        listTitle: { 
+            fontSize: 16, 
+            fontWeight: 'bold', 
+            marginBottom: 10, 
+            marginTop: 5, 
+            paddingHorizontal: 5,
+            color: theme === 'dark' ? '#CCCCCC' : '#000' 
+        },
+        listItem: { 
+            backgroundColor: theme === 'dark' ? '#1E1E1E' : '#fff', 
+            padding: 15, 
+            borderRadius: 8, 
+            marginBottom: 10, 
+            elevation: 1 
+        },
+        row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+        orderId: { 
+            fontSize: 16, 
+            fontWeight: 'bold',
+            color: theme === 'dark' ? '#FFF' : '#000' 
+        },
+        addressRow: { flexDirection: 'row', alignItems: 'center', marginVertical: 2 },
+        addressLine: { 
+            fontSize: 14, 
+            color: theme === 'dark' ? '#AAA' : '#555', 
+            marginLeft: 5 
+        },
+        amountText: { fontSize: 16, fontWeight: '700', color: '#4CAF50' }, 
+        statusChip: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 12 },
+        statusChipText: { fontSize: 12, fontWeight: 'bold', color: '#fff' },
+        openButton: { backgroundColor: '#4F46E5', paddingVertical: 6, paddingHorizontal: 15, borderRadius: 5 },
+        openButtonText: { color: '#fff', fontWeight: 'bold' },
+        emptyText: { textAlign: 'center', marginTop: 20, color: theme === 'dark' ? '#777' : '#999' },
+        switchTrackFalse: { color: theme === 'dark' ? '#9E9E9E' : '#767577' },
+        switchThumb: { color: theme === 'dark' ? '#FFFFFF' : '#f4f3f4' },
+        switchIOSBackground: { color: theme === 'dark' ? '#555' : '#3e3e3e' },
+        iconColor: { color: theme === 'dark' ? '#BBB' : '#777' } 
+    });
 
     return (
-        <View style={styles.container}>
+        <View style={dynamicStyles.container}>
             <AppHeader
-                title="Deliveries"
+                title={t("deliveries")}
                 rightAction={{
                     iconName: 'notifications',
                     onPress: handleOpenNotifications
                 }}
             />
 
-            <ScrollView style={styles.content}>
+            <ScrollView style={dynamicStyles.content}>
                 <AvailabilityToggle
                     partnerName={partnerName}
                     isOnline={isOnline}
                     toggleOnline={toggleAvailability}
+                    styles={dynamicStyles}
+                    t={t}
                 />
 
-                <RNText style={styles.listTitle}>Active Requests ({orders.length})</RNText>
+                <RNText style={dynamicStyles.listTitle}>{t('active_requests')} ({orders.length})</RNText>
 
                 <FlatList
                     data={orders}
                     renderItem={({ item }) => (
-                        <OrderListItem item={item} onOpen={handleOpenDetails} />
+                        <OrderListItem 
+                            item={item} 
+                            onOpen={handleOpenDetails} 
+                            styles={dynamicStyles} 
+                            t={t} 
+                        />
                     )}
                     keyExtractor={(item) => item.id}
                     scrollEnabled={false}
                     ListEmptyComponent={
-                        <RNText style={styles.emptyText}>No active requests right now.</RNText>
+                        <RNText style={dynamicStyles.emptyText}>{t('no_active_requests')}</RNText>
                     }
                 />
             </ScrollView>
         </View>
     );
 }
-
-const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#f5f5f5' },
-    content: { padding: 10 },
-    toggleContainer: { backgroundColor: '#fff', padding: 15, borderRadius: 8, marginBottom: 10, marginTop: 5 },
-    toggleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    partnerName: { fontSize: 18, fontWeight: 'bold', marginBottom: 5 },
-    statusText: { fontWeight: '600', fontSize: 16 },
-    listTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 10, marginTop: 5, paddingHorizontal: 5 },
-    listItem: { backgroundColor: '#fff', padding: 15, borderRadius: 8, marginBottom: 10, elevation: 1 },
-    row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    orderId: { fontSize: 16, fontWeight: 'bold' },
-    addressRow: { flexDirection: 'row', alignItems: 'center', marginVertical: 2 },
-    addressLine: { fontSize: 14, color: '#555', marginLeft: 5 },
-    amountText: { fontSize: 16, fontWeight: '700', color: '#4CAF50' },
-    statusChip: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 12 },
-    statusChipText: { fontSize: 12, fontWeight: 'bold', color: '#fff' },
-    openButton: { backgroundColor: '#4F46E5', paddingVertical: 6, paddingHorizontal: 15, borderRadius: 5 },
-    openButtonText: { color: '#fff', fontWeight: 'bold' },
-    emptyText: { textAlign: 'center', marginTop: 20, color: '#999' }
-});

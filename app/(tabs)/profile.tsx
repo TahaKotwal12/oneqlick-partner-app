@@ -1,253 +1,325 @@
-// oneQlick/app/(tabs)/profile.tsx (Profile Summary and Availability Toggle - Task 9)
+// oneQlick/app/(tabs)/profile.tsx (I18N + THEME FIXED)
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, Alert, Switch, TouchableOpacity } from 'react-native';
-import { useRouter } from 'expo-router'; // 1. IMPORT useRouter
-import AppHeader from '../../components/common/AppHeader'; 
+import { useRouter } from 'expo-router';
+import AppHeader from '../../components/common/AppHeader';
 import { MaterialIcons } from '@expo/vector-icons';
-// NOTE: Ensure getProfile() returns the expected mock structure
-import { getProfile } from '../../utils/mock'; 
+import { getProfile } from '../../utils/mock';
+import { useTheme } from '../../contexts/ThemeContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 
-// *** Data Interfaces ***
+// *** Interfaces ***
 interface UserProfile {
-    name: string;
-    role: string;
-    earnings_today: number;
-    trips_today: number;
-    is_online: boolean; // Checklist: Toggle Online/Offline
+  name: string;
+  role: string;
+  earnings_today: number;
+  trips_today: number;
+  is_online: boolean;
 }
 
-// --- Helper Components ---
-
-// Helper component for the summary metrics (Earnings/Trips)
-const MetricCard = ({ title, value, icon, color }: { title: string, value: string, icon: string, color: string }) => (
-    <View style={profileStyles.metricCard}>
-        <MaterialIcons name={icon as 'attach-money'} size={28} color={color} />
-        <Text style={profileStyles.metricValue}>{value}</Text>
-        <Text style={profileStyles.metricTitle}>{title}</Text>
-    </View>
+// *** Metric Card Component ***
+const MetricCard = ({
+  title,
+  value,
+  icon,
+  color,
+  styleSet,
+}: {
+  title: string;
+  value: string;
+  icon: keyof typeof MaterialIcons.glyphMap;
+  color: string;
+  styleSet: any;
+}) => (
+  <View style={styleSet.metricCard}>
+    <MaterialIcons name={icon} size={28} color={color} />
+    <Text style={styleSet.metricValue}>{value}</Text>
+    <Text style={styleSet.metricTitle}>{title}</Text>
+  </View>
 );
 
-// --- Main Component ---
+// *** Main Component ***
 export default function ProfileScreen() {
-    const router = useRouter(); // 2. INITIALIZE useRouter
-    const [profile, setProfile] = useState<UserProfile | null>(null);
-    const [isOnline, setIsOnline] = useState(false);
-    const [loading, setLoading] = useState(true);
+  const router = useRouter();
+  const { theme } = useTheme();
+  const { t } = useLanguage();
 
-    // 1. Checklist: Use profile.json and load state
-    useEffect(() => {
-        try {
-            // Ensure getProfile() returns the structure defined in UserProfile
-            const mockProfile: UserProfile = getProfile();
-            setProfile(mockProfile);
-            setIsOnline(mockProfile.is_online);
-        } catch (error) {
-            console.error("Error loading profile mock data:", error);
-        } finally {
-            setLoading(false);
-        }
-    }, []);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [isOnline, setIsOnline] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-    // 2. Checklist: Toggle Online/Offline (local state simulation)
-    const toggleAvailability = useCallback(() => {
-        const newStatus = !isOnline;
-        setIsOnline(newStatus);
-        
-        // Simulates saving state for persistence (Acceptance: State persists)
-        if (profile) {
-            setProfile({ ...profile, is_online: newStatus });
-        }
-        
-        Alert.alert("Status Updated", `You are now set to ${newStatus ? 'ONLINE' : 'OFFLINE'}.`);
-    }, [isOnline, profile]);
-
-    if (loading) {
-        return <View style={styles.center}><Text>Loading Profile...</Text></View>;
+  // Load Profile
+  useEffect(() => {
+    try {
+      const mockProfile: UserProfile = getProfile();
+      setProfile(mockProfile);
+      setIsOnline(mockProfile.is_online);
+    } catch (err) {
+      console.error("Error loading profile:", err);
+    } finally {
+      setLoading(false);
     }
-    
-    if (!profile) {
-        return <View style={styles.center}><Text>Profile Data Missing.</Text></View>;
+  }, []);
+
+  // Toggle Online Status
+  const toggleAvailability = useCallback(() => {
+    const newStatus = !isOnline;
+    setIsOnline(newStatus);
+
+    if (profile) {
+      setProfile({ ...profile, is_online: newStatus });
     }
 
-    const roleLabel = profile.role === 'restaurant_owner' ? 'Restaurant Partner' : 'Delivery Partner';
-    const statusColor = isOnline ? '#4CAF50' : '#F44336';
-    const statusText = isOnline ? 'ONLINE' : 'OFFLINE';
-
-    return (
-        <View style={styles.container}>
-            <AppHeader title="My Profile" showBack={false} />
-            <ScrollView style={styles.content}>
-                
-                {/* Profile Header */}
-                <View style={profileStyles.headerCard}>
-                    <MaterialIcons name="person-pin" size={50} color="#4F46E5" />
-                    <Text style={profileStyles.partnerName}>{profile.name}</Text>
-                    <Text style={profileStyles.partnerRole}>{roleLabel}</Text>
-                </View>
-                
-                {/* Checklist: Toggle Online/Offline */}
-                <View style={profileStyles.toggleContainer}>
-                    <View>
-                        <Text style={profileStyles.statusLabel}>Current Status</Text>
-                        <Text style={[profileStyles.statusText, { color: statusColor }]}>
-                            {statusText}
-                        </Text>
-                    </View>
-                    <Switch
-                        trackColor={{ false: "#ccc", true: "#4CAF50" }}
-                        thumbColor="#fff"
-                        onValueChange={toggleAvailability}
-                        value={isOnline}
-                    />
-                </View>
-
-                {/* Checklist: Profile card with earnings + trips */}
-                <Text style={profileStyles.sectionTitle}>Today's Performance</Text>
-                <View style={profileStyles.metricsRow}>
-                    <MetricCard 
-                        title="Earnings" 
-                        value={`$${profile.earnings_today.toFixed(2)}`} 
-                        icon="attach-money" 
-                        color="#4CAF50" 
-                    />
-                    <MetricCard 
-                        title="Total Trips" 
-                        value={profile.trips_today.toString()} 
-                        icon="directions-bike" 
-                        color="#2196F3" 
-                    />
-                </View>
-                
-                {/* Placeholder for settings/other links */}
-                <View style={{ marginTop: 20 }}>
-                    <TouchableOpacity 
-                        style={profileStyles.linkItem}
-                        // 🔑 UPDATED: Use router.push for navigation
-                        onPress={() => router.push('/settings')} 
-                    >
-                        <MaterialIcons name="settings" size={24} color="#666" />
-                        <Text style={profileStyles.linkText}>Settings</Text>
-                        <MaterialIcons name="chevron-right" size={24} color="#ccc" style={profileStyles.linkIcon} />
-                    </TouchableOpacity>
-
-                    <TouchableOpacity 
-                        style={profileStyles.linkItem}
-                        // 🔑 ADDED: OnPress handler for Log Out
-                        onPress={() => Alert.alert("Confirm Logout", "Are you sure you want to log out?", [
-                            { text: "Cancel" },
-                            { text: "Log Out", style: 'destructive', onPress: () => console.log("User logged out.") }
-                        ])} 
-                    >
-                        <MaterialIcons name="logout" size={24} color="#F44336" />
-                        <Text style={profileStyles.linkText}>Log Out</Text>
-                        <MaterialIcons name="chevron-right" size={24} color="#ccc" style={profileStyles.linkIcon} />
-                    </TouchableOpacity>
-                </View>
-
-            </ScrollView>
-        </View>
+    Alert.alert(
+      t("status_updated"),
+      `${t("you_are_now_set_to")} ${
+        newStatus ? t("online").toUpperCase() : t("offline").toUpperCase()
+      }.`
     );
-}
+  }, [isOnline, profile, t]);
 
-// --- Styles ---
-
-const profileStyles = StyleSheet.create({
-    center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  // Dynamic THEME styles
+  const dynamicStyles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme === "dark" ? "#121212" : "#f5f5f5",
+    },
     content: { padding: 15 },
-    
+
+    center: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: theme === "dark" ? "#121212" : "#FFFFFF",
+    },
+    loadingText: {
+      color: theme === "dark" ? "#FFF" : "#333",
+    },
+
     headerCard: {
-        backgroundColor: '#fff',
-        borderRadius: 10,
-        padding: 20,
-        alignItems: 'center',
-        marginBottom: 20,
+      backgroundColor: theme === "dark" ? "#1E1E1E" : "#fff",
+      borderRadius: 10,
+      padding: 20,
+      alignItems: "center",
+      marginBottom: 20,
+      borderWidth: theme === "dark" ? 1 : 0,
+      borderColor: theme === "dark" ? "#333" : "transparent",
     },
     partnerName: {
-        fontSize: 22,
-        fontWeight: 'bold',
-        marginTop: 10,
-        color: '#333',
+      fontSize: 22,
+      fontWeight: "bold",
+      marginTop: 10,
+      color: theme === "dark" ? "#FFFFFF" : "#333",
     },
     partnerRole: {
-        fontSize: 14,
-        color: '#777',
-        marginTop: 4,
+      fontSize: 14,
+      color: theme === "dark" ? "#AAA" : "#777",
+      marginTop: 4,
     },
 
-    // Toggle Section
     toggleContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        backgroundColor: '#fff',
-        padding: 15,
-        borderRadius: 10,
-        marginBottom: 20,
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      backgroundColor: theme === "dark" ? "#1E1E1E" : "#fff",
+      padding: 15,
+      borderRadius: 10,
+      marginBottom: 20,
+      borderWidth: theme === "dark" ? 1 : 0,
+      borderColor: theme === "dark" ? "#333" : "transparent",
     },
     statusLabel: {
-        fontSize: 14,
-        color: '#666',
+      fontSize: 14,
+      color: theme === "dark" ? "#BBB" : "#666",
     },
     statusText: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        marginTop: 4,
+      fontSize: 18,
+      fontWeight: "bold",
+      marginTop: 4,
     },
-    
-    // Metrics Section
+
     sectionTitle: {
-        fontSize: 16,
-        fontWeight: '700',
-        color: '#333',
-        marginBottom: 10,
+      fontSize: 16,
+      fontWeight: "700",
+      color: theme === "dark" ? "#BB86FC" : "#333",
+      marginBottom: 10,
     },
+
     metricsRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        gap: 10,
+      flexDirection: "row",
+      justifyContent: "space-between",
+      gap: 10,
     },
     metricCard: {
-        flex: 1,
-        backgroundColor: '#fff',
-        borderRadius: 10,
-        padding: 15,
-        alignItems: 'flex-start',
+      flex: 1,
+      backgroundColor: theme === "dark" ? "#1E1E1E" : "#fff",
+      borderRadius: 10,
+      padding: 15,
+      alignItems: "flex-start",
+      borderWidth: theme === "dark" ? 1 : 0,
+      borderColor: theme === "dark" ? "#333" : "transparent",
     },
     metricValue: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        marginTop: 5,
-        color: '#333',
+      fontSize: 24,
+      fontWeight: "bold",
+      marginTop: 5,
+      color: theme === "dark" ? "#FFFFFF" : "#333",
     },
     metricTitle: {
-        fontSize: 12,
-        color: '#777',
-        marginTop: 2,
+      fontSize: 12,
+      color: theme === "dark" ? "#AAA" : "#777",
+      marginTop: 2,
     },
 
-    // Link List
     linkItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#fff',
-        padding: 15,
-        borderRadius: 10,
-        marginBottom: 10,
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: theme === "dark" ? "#1E1E1E" : "#fff",
+      padding: 15,
+      borderRadius: 10,
+      marginBottom: 10,
+      borderWidth: theme === "dark" ? 1 : 0,
+      borderColor: theme === "dark" ? "#333" : "transparent",
     },
     linkText: {
-        flex: 1,
-        fontSize: 16,
-        marginLeft: 15,
-        color: '#333',
+      flex: 1,
+      fontSize: 16,
+      marginLeft: 15,
+      color: theme === "dark" ? "#FFFFFF" : "#333",
     },
     linkIcon: {
-        width: 24,
-    }
-});
+      width: 24,
+    },
+    linkIconColor: {
+      color: theme === "dark" ? "#AAA" : "#666",
+    },
+  });
 
-const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#f5f5f5' },
-    content: { padding: 15 },
-    center: { flex: 1, justifyContent: 'center', alignItems: 'center' }
-});
+  if (loading) {
+    return (
+      <View style={dynamicStyles.center}>
+        <Text style={dynamicStyles.loadingText}>{t("loading_profile")}</Text>
+      </View>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <View style={dynamicStyles.center}>
+        <Text style={dynamicStyles.loadingText}>{t("profile_data_missing")}</Text>
+      </View>
+    );
+  }
+
+  const roleKey =
+    profile.role === "restaurant_owner"
+      ? "restaurant_partner"
+      : "delivery_partner";
+
+  const roleLabel = t(roleKey);
+  const statusColor = isOnline ? "#4CAF50" : "#F44336";
+  const statusText = isOnline
+    ? t("online").toUpperCase()
+    : t("offline").toUpperCase();
+
+  return (
+    <View style={dynamicStyles.container}>
+      <AppHeader title={t("my_profile")} showBack={false} />
+
+      <ScrollView style={dynamicStyles.content}>
+        {/* Header */}
+        <View style={dynamicStyles.headerCard}>
+          <MaterialIcons name="person-pin" size={50} color="#4F46E5" />
+          <Text style={dynamicStyles.partnerName}>{profile.name}</Text>
+          <Text style={dynamicStyles.partnerRole}>{roleLabel}</Text>
+        </View>
+
+        {/* Online / Offline Toggle */}
+        <View style={dynamicStyles.toggleContainer}>
+          <View>
+            <Text style={dynamicStyles.statusLabel}>{t("current_status")}</Text>
+            <Text style={[dynamicStyles.statusText, { color: statusColor }]}>
+              {statusText}
+            </Text>
+          </View>
+
+          <Switch
+            trackColor={{
+              false: theme === "dark" ? "#555" : "#ccc",
+              true: "#4CAF50",
+            }}
+            thumbColor={theme === "dark" ? "#F8F8F8" : "#fff"}
+            onValueChange={toggleAvailability}
+            value={isOnline}
+          />
+        </View>
+
+        {/* Metrics */}
+        <Text style={dynamicStyles.sectionTitle}>
+          {t("todays_performance")}
+        </Text>
+
+        <View style={dynamicStyles.metricsRow}>
+          <MetricCard
+            title={t("earnings")}
+            value={`₹${profile.earnings_today.toFixed(2)}`} // 👉 CHANGED FROM $
+            icon="attach-money"
+            color="#4CAF50"
+            styleSet={dynamicStyles}
+          />
+
+          <MetricCard
+            title={t("total_trips")}
+            value={profile.trips_today.toString()}
+            icon="directions-bike"
+            color="#2196F3"
+            styleSet={dynamicStyles}
+          />
+        </View>
+
+        {/* Links */}
+        <View style={{ marginTop: 20 }}>
+          <TouchableOpacity
+            style={dynamicStyles.linkItem}
+            onPress={() => router.push("/settings")}
+          >
+            <MaterialIcons
+              name="settings"
+              size={24}
+              color={dynamicStyles.linkIconColor.color}
+            />
+            <Text style={dynamicStyles.linkText}>{t("settings")}</Text>
+            <MaterialIcons
+              name="chevron-right"
+              size={24}
+              color={theme === "dark" ? "#444" : "#ccc"}
+            />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={dynamicStyles.linkItem}
+            onPress={() =>
+              Alert.alert(t("confirm_logout"), t("sure_log_out"), [
+                { text: t("cancel"), style: "cancel" },
+                {
+                  text: t("log_out"),
+                  style: "destructive",
+                  onPress: () => console.log("User logged out"),
+                },
+              ])
+            }
+          >
+            <MaterialIcons name="logout" size={24} color="#F44336" />
+            <Text style={dynamicStyles.linkText}>{t("log_out")}</Text>
+            <MaterialIcons
+              name="chevron-right"
+              size={24}
+              color={theme === "dark" ? "#444" : "#ccc"}
+            />
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </View>
+  );
+}

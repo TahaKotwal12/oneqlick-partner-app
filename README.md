@@ -284,3 +284,42 @@ For support and questions:
 
 **Built with ❤️ for rural Indian communities** # oneQlick-User-App
 "# oneqlick-partner-app" 
+
+## Pull Request Checklist: 
+
+**Target Branch:** [main ]
+
+---
+
+### 🚀 Overview of Changes
+
+* **Goal:** [Established a standardized checklist and review guide to ensure comprehensive testing (including role simulation and UI checks) for every incoming feature branch.]
+* **Related Files:**
+    * `/app/settings.tsx` (New UI)
+    * `/contexts/ThemeContext.tsx` (Modified for Dark Mode logic)
+    * `/constants/localization.ts` (New file for Language switching logic)
+
+---
+
+### ✅ Testing Checklist (Mandatory)
+
+Please check off all applicable boxes:
+
+#### Code & Environment
+- [ ] Code follows project style guidelines (ESLint, TypeScript).
+- [ ] New components/functions include documentation/comments where necessary.
+- [ ] All environment configuration (API keys, mock settings) are documented in the PR description if new.
+
+#### Functional Verification
+- [ ] **Acceptance Criteria Met:** All points in the associated Issue task are complete.
+- [ ] **Dark Mode:** Toggling the theme switch correctly changes the app's overall appearance (Background, Text, Cards).
+- [ ] **Language Select:** Opening the language picker and selecting an option updates the `Current Language` text instantly.
+- [ ] **Navigation Check:** All links created/modified in this task navigate correctly (e.g., Profile -> Settings).
+
+#### Mock Data Review
+- [ ] Testing was performed using the appropriate mock profile (e.g., `"restaurant_owner"`).
+
+---
+
+### 🖼️ Visual Proof (Screenshots)
+

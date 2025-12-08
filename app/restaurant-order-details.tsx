@@ -1,18 +1,24 @@
-// oneQlick/app/restaurant-order-details.tsx (Restaurant Order Details Screen - Task 8)
+// oneQlick/app/restaurant-order-details.tsx (I18N and THEME-AWARE)
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, TextInput, TouchableOpacity } from 'react-native';
+import { 
+    View, 
+    Text as RNText, 
+    StyleSheet, 
+    ScrollView, 
+    Alert, 
+    TextInput, 
+    TouchableOpacity 
+} from 'react-native';
 import { useLocalSearchParams } from 'expo-router'; 
 import AppHeader from '../components/common/AppHeader'; 
 import { getRestaurantOrders } from '../utils/mock'; 
 import { MaterialIcons } from '@expo/vector-icons'; 
+import { useTheme } from '../contexts/ThemeContext'; 
+import { useLanguage } from '../contexts/LanguageContext'; 
 
 // *** Data Interfaces ***
-interface OrderItem {
-    name: string;
-    qty: number;
-}
-
+interface OrderItem { name: string; qty: number; }
 interface RestaurantOrder {
     id: string;
     status: string;
@@ -20,23 +26,22 @@ interface RestaurantOrder {
     customer: string;
     pickup_time: string;
     items: OrderItem[];
-    notes: string; // Existing note field
+    notes: string; 
 }
 
 // --- Helper Components ---
-
-const DetailRow = ({ icon, label, value }: { icon: string, label: string, value: string }) => (
+const DetailRow = ({ icon, label, value, styles }: { icon: string, label: string, value: string, styles: any }) => (
     <View style={styles.detailRow}>
         <MaterialIcons name={icon as 'person'} size={20} color="#007AFF" style={{ marginRight: 10 }} />
-        <Text style={styles.detailLabel}>{label}: </Text>
-        <Text style={styles.detailValue}>{value}</Text>
+        <RNText style={styles.detailLabel}>{label}: </RNText>
+        <RNText style={styles.detailValue}>{value}</RNText>
     </View>
 );
 
-const ItemRow = ({ name, qty }: OrderItem) => (
+const ItemRow = ({ name, qty, styles }: OrderItem & { styles: any }) => (
     <View style={styles.itemRow}>
-        <Text style={styles.itemQty}>{qty}x</Text>
-        <Text style={styles.itemName}>{name}</Text>
+        <RNText style={styles.itemQty}>{qty}x</RNText>
+        <RNText style={styles.itemName}>{name}</RNText>
     </View>
 );
 
@@ -45,14 +50,17 @@ export default function RestaurantOrderDetailsScreen() {
     const params = useLocalSearchParams();
     const orderId = Array.isArray(params.orderId) ? params.orderId[0] : params.orderId;
     
+    const { theme } = useTheme(); 
+    const { t } = useLanguage(); 
+
     const [order, setOrder] = useState<RestaurantOrder | null>(null);
-    const [localNotes, setLocalNotes] = useState(''); // Checklist: Add note (local save)
-    const [status, setStatus] = useState('Loading...');
+    const [localNotes, setLocalNotes] = useState(''); 
+    const [status, setStatus] = useState(t('loading'));
 
     // 1. Fetch Order Details from Mock
     useEffect(() => {
         if (!orderId) {
-            setStatus('Error: No Order ID Provided');
+            setStatus(t('error_no_order_id')); 
             return;
         }
 
@@ -61,79 +69,167 @@ export default function RestaurantOrderDetailsScreen() {
 
         if (selectedOrder) {
             setOrder(selectedOrder);
-            setStatus(selectedOrder.status);
+            setStatus(t(selectedOrder.status.toLowerCase())); 
             setLocalNotes(selectedOrder.notes || ''); 
         } else {
-            // Fallback for testing if ID is missing (Use first order)
             setOrder(allOrders[0] || null);
-            setStatus(allOrders[0]?.status || 'Error: Order Not Found');
+            setStatus(allOrders[0]?.status ? t(allOrders[0].status.toLowerCase()) : t('error_order_not_found')); 
             setLocalNotes(allOrders[0]?.notes || '');
         }
-    }, [orderId]);
+    }, [orderId, t]);
 
-    // 2. Checklist: Add note (local save) - Persists for the session
+    // 2. Handle Note Save (local session only)
     const handleSaveNotes = () => {
         if (order) {
-            // Updates local state (Acceptance: Fully displays order + saves notes)
             setOrder({ ...order, notes: localNotes });
-            Alert.alert("Notes Saved", "Internal notes updated successfully for this session.");
+            Alert.alert(t("notes_saved"), t("internal_notes_saved")); 
         }
     };
     
+    // 🔑 Dynamic Styles Definition
+    const dynamicStyles = StyleSheet.create({
+        container: { flex: 1, backgroundColor: theme === 'dark' ? '#121212' : '#f5f5f5' },
+        loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+        content: { padding: 15 },
+        card: { 
+            backgroundColor: theme === 'dark' ? '#1E1E1E' : '#fff', 
+            borderRadius: 8, 
+            padding: 15, 
+            marginBottom: 15, 
+            elevation: 2,
+            borderWidth: theme === 'dark' ? 1 : 0,
+            borderColor: theme === 'dark' ? '#333' : 'transparent',
+        },
+        notesCard: { padding: 0 },
+        sectionTitle: { 
+            fontSize: 16, 
+            fontWeight: '700', 
+            color: theme === 'dark' ? '#BB86FC' : '#333', 
+            marginBottom: 10, 
+            marginTop: 5 
+        },
+        
+        statusBox: { 
+            flexDirection: 'row', 
+            justifyContent: 'space-between', 
+            alignItems: 'center', 
+            backgroundColor: theme === 'dark' ? '#333300' : '#fffbe6', 
+            padding: 10, 
+            borderRadius: 8, 
+            marginBottom: 15, 
+            borderWidth: 1, 
+            borderColor: theme === 'dark' ? '#555500' : '#ffecb3' 
+        },
+        statusTitle: { fontSize: 14, color: theme === 'dark' ? '#CCC' : '#333' },
+        statusValue: { fontSize: 16, fontWeight: 'bold', color: '#ff9800' },
+
+        detailRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 5 },
+        detailLabel: { fontSize: 15, fontWeight: '600', color: theme === 'dark' ? '#FFFFFF' : '#333' },
+        detailValue: { fontSize: 15, color: theme === 'dark' ? '#BBB' : '#666', flex: 1 },
+
+        itemRow: { 
+            flexDirection: 'row', 
+            justifyContent: 'space-between', 
+            paddingVertical: 8, 
+            borderBottomWidth: 1, 
+            borderBottomColor: theme === 'dark' ? '#292929' : '#fafafa' 
+        },
+        itemQty: { fontWeight: 'bold', width: 30, color: '#007AFF' },
+        itemName: { flex: 1, color: theme === 'dark' ? '#FFFFFF' : '#333' },
+
+        notesInput: {
+            minHeight: 120,
+            fontSize: 15,
+            padding: 15,
+            textAlignVertical: 'top',
+            color: theme === 'dark' ? '#FFFFFF' : '#333',
+            backgroundColor: theme === 'dark' ? '#1E1E1E' : '#fff',
+            borderBottomWidth: 1,
+            borderBottomColor: theme === 'dark' ? '#333' : '#eee',
+        },
+        noteActionRow: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: 8,
+        },
+        saveHint: {
+            fontSize: 12,
+            color: theme === 'dark' ? '#777' : '#999',
+            textAlign: 'right',
+        },
+        saveButton: {
+            backgroundColor: '#4F46E5',
+            paddingHorizontal: 12,
+            paddingVertical: 6,
+            borderRadius: 5,
+        },
+        saveButtonText: {
+            color: '#fff',
+            fontWeight: 'bold',
+            fontSize: 14,
+        }
+    });
+
+    
     if (!order) {
-        return <View style={styles.loadingContainer}><Text>Loading Order Details...</Text></View>;
+        return (
+            <View style={dynamicStyles.loadingContainer}>
+                <RNText style={{ color: theme === 'dark' ? '#FFF' : '#333' }}>
+                    {t('loading_order_details')}...
+                </RNText>
+            </View>
+        );
     }
 
     return (
-        <View style={styles.container}>
-            {/* Header with back button */}
+        <View style={dynamicStyles.container}>
             <AppHeader 
-                title={`Order #${order.id}`} 
+                title={`${t('order_hash')}${order.id}`} 
                 showBack={true} 
             />
             
-            <ScrollView style={styles.content}>
+            <ScrollView style={dynamicStyles.content}>
                 
                 {/* Current Status */}
-                <View style={styles.statusBox}>
-                    <Text style={styles.statusTitle}>Current Status:</Text>
-                    <Text style={styles.statusValue}>{status}</Text>
+                <View style={dynamicStyles.statusBox}>
+                    <RNText style={dynamicStyles.statusTitle}>{t('current_status')}:</RNText>
+                    <RNText style={dynamicStyles.statusValue}>{status}</RNText>
                 </View>
 
-                {/* Checklist: Show items, totals, customer, pickup time. */}
-                <Text style={styles.sectionTitle}>Customer & Order Summary 🧑</Text>
-                <View style={styles.card}>
-                    <DetailRow icon="person" label="Customer" value={order.customer} />
-                    <DetailRow icon="access-time" label="Pickup Time" value={order.pickup_time} />
+                {/* Customer & Order Summary */}
+                <RNText style={dynamicStyles.sectionTitle}>{t('customer_order_summary')} 🧑</RNText> 
+                <View style={dynamicStyles.card}>
+                    <DetailRow icon="person" label={t("customer")} value={order.customer} styles={dynamicStyles} /> 
+                    <DetailRow icon="access-time" label={t("pickup_time")} value={order.pickup_time} styles={dynamicStyles} /> 
                     
-                    {/* 🔑 FIX APPLIED HERE: Changed '$' to '₹' */}
-                    <DetailRow icon="payment" label="Order Total" value={`₹${order.total.toFixed(2)}`} />
+                    <DetailRow icon="payment" label={t("order_total")} value={`₹${order.total.toFixed(2)}`} styles={dynamicStyles} /> 
                 </View>
 
-                {/* Checklist: Items list. */}
-                <Text style={styles.sectionTitle}>Order Items 🍔</Text>
-                <View style={styles.card}>
+                {/* Items list */}
+                <RNText style={dynamicStyles.sectionTitle}>{t('order_items')} 🍔</RNText> 
+                <View style={dynamicStyles.card}>
                     {order.items.map((item, index) => (
-                        <ItemRow key={index} name={item.name} qty={item.qty} />
+                        <ItemRow key={index} name={item.name} qty={item.qty} styles={dynamicStyles} />
                     ))}
                 </View>
 
-                {/* Checklist: Add note (local save) */}
-                <Text style={styles.sectionTitle}>Internal Notes 📝</Text>
-                <View style={[styles.card, styles.notesCard]}>
+                {/* Internal Notes */}
+                <RNText style={dynamicStyles.sectionTitle}>{t('internal_notes')} 📝</RNText> 
+                <View style={[dynamicStyles.card, dynamicStyles.notesCard]}>
                     <TextInput
-                        style={styles.notesInput}
+                        style={dynamicStyles.notesInput}
                         multiline
-                        placeholder="Add internal notes or customer requests here..."
+                        placeholder={t("notes_placeholder")} 
                         value={localNotes}
                         onChangeText={setLocalNotes}
                         onBlur={handleSaveNotes} 
-                        placeholderTextColor="#aaa"
+                        placeholderTextColor={theme === 'dark' ? '#999' : '#aaa'}
                     />
-                    <View style={styles.noteActionRow}>
-                        <Text style={styles.saveHint}>Notes save automatically when you leave the field or press Save.</Text>
-                        <TouchableOpacity style={styles.saveButton} onPress={handleSaveNotes}>
-                             <Text style={styles.saveButtonText}>Save</Text>
+                    <View style={dynamicStyles.noteActionRow}>
+                        <RNText style={dynamicStyles.saveHint}>{t('notes_save_hint')}</RNText> 
+                        <TouchableOpacity style={dynamicStyles.saveButton} onPress={handleSaveNotes}>
+                             <RNText style={dynamicStyles.saveButtonText}>{t('save')}</RNText> 
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -144,62 +240,3 @@ export default function RestaurantOrderDetailsScreen() {
         </View>
     );
 }
-
-// --- Styles ---
-
-const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#f5f5f5' },
-    loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-    content: { padding: 15 },
-    card: { backgroundColor: '#fff', borderRadius: 8, padding: 15, marginBottom: 15, elevation: 2 },
-    notesCard: { padding: 0 },
-    sectionTitle: { fontSize: 16, fontWeight: '700', color: '#333', marginBottom: 10, marginTop: 5 },
-    
-    // Status Box
-    statusBox: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fffbe6', padding: 10, borderRadius: 8, marginBottom: 15, borderWidth: 1, borderColor: '#ffecb3' },
-    statusTitle: { fontSize: 14, color: '#333' },
-    statusValue: { fontSize: 16, fontWeight: 'bold', color: '#ff9800' },
-
-    // Detail Rows
-    detailRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 5 },
-    detailLabel: { fontSize: 15, fontWeight: '600', color: '#333' },
-    detailValue: { fontSize: 15, color: '#666', flex: 1 },
-
-    // Item Rows
-    itemRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#fafafa' },
-    itemQty: { fontWeight: 'bold', width: 30, color: '#007AFF' },
-    itemName: { flex: 1, color: '#333' },
-
-    // Notes Input & Save Action
-    notesInput: {
-        minHeight: 120,
-        fontSize: 15,
-        padding: 15,
-        textAlignVertical: 'top',
-        color: '#333',
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
-    },
-    noteActionRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: 8,
-    },
-    saveHint: {
-        fontSize: 12,
-        color: '#999',
-        textAlign: 'right',
-    },
-    saveButton: {
-        backgroundColor: '#4F46E5',
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 5,
-    },
-    saveButtonText: {
-        color: '#fff',
-        fontWeight: 'bold',
-        fontSize: 14,
-    }
-});

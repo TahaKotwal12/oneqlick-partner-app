@@ -1,12 +1,14 @@
-// oneQlick/app/(tabs)/orders.tsx (FIXED)
+// oneQlick/app/(tabs)/orders.tsx (I18N + THEME FIXED)
 
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
-import { Text as RNText } from 'react-native'; // ✅ FIX
+import { Text as RNText } from 'react-native';
 import { useRouter } from 'expo-router';
 import AppHeader from '../../components/common/AppHeader';
 import { MaterialIcons } from '@expo/vector-icons';
 import { getRestaurantOrders } from '../../utils/mock';
+import { useTheme } from '../../contexts/ThemeContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 // *** Data Interfaces ***
 interface RestaurantOrder {
@@ -20,9 +22,14 @@ interface RestaurantOrder {
 }
 
 // Action Button
-const ActionButton = ({ title, onPress, color }: { title: string; onPress: () => void; color: string }) => (
-    <TouchableOpacity onPress={onPress} style={[orderStyles.actionButton, { backgroundColor: color }]}>
-        <RNText style={orderStyles.actionButtonText}>{title}</RNText>
+const ActionButton = ({ title, onPress, color, styles }: {
+    title: string;
+    onPress: () => void;
+    color: string;
+    styles: any;
+}) => (
+    <TouchableOpacity onPress={onPress} style={[styles.actionButton, { backgroundColor: color }]}>
+        <RNText style={styles.actionButtonText}>{title}</RNText>
     </TouchableOpacity>
 );
 
@@ -31,13 +38,18 @@ const OrderCard = ({
     order,
     onStatusChange,
     onOpenDetails,
-    onOpenNotes
+    onOpenNotes,
+    styles,
+    t
 }: {
     order: RestaurantOrder;
     onStatusChange: (id: string, newStatus: RestaurantOrder['status']) => void;
     onOpenDetails: (id: string) => void;
     onOpenNotes: (id: string) => void;
+    styles: any;
+    t: (key: string) => string;
 }) => {
+
     const getStatusChipStyle = (status: string) => {
         switch (status) {
             case 'New': return { backgroundColor: '#FF9800', color: '#fff' };
@@ -50,90 +62,103 @@ const OrderCard = ({
     };
 
     const statusStyle = getStatusChipStyle(order.status);
+    const translatedStatus = t(order.status.toLowerCase());
 
     const renderActions = () => {
         if (order.status === 'New') {
             return (
-                <View style={orderStyles.actionsRow}>
-                    <ActionButton title="Accept" color="#4CAF50" onPress={() => onStatusChange(order.id, 'Preparing')} />
-                    <ActionButton title="Reject" color="#F44336" onPress={() => onStatusChange(order.id, 'Rejected')} />
+                <View style={styles.actionsRow}>
+                    <ActionButton title={t("accept")} color="#4CAF50"
+                        onPress={() => onStatusChange(order.id, 'Preparing')} styles={styles} />
+                    <ActionButton title={t("reject")} color="#F44336"
+                        onPress={() => onStatusChange(order.id, 'Rejected')} styles={styles} />
                 </View>
             );
         } else if (order.status === 'Preparing') {
-            return <ActionButton title="Mark Ready" color="#007AFF" onPress={() => onStatusChange(order.id, 'Ready')} />;
+            return (
+                <ActionButton title={t("mark_ready")} color="#007AFF"
+                    onPress={() => onStatusChange(order.id, 'Ready')} styles={styles} />
+            );
         } else if (order.status === 'Ready') {
-            return <RNText style={orderStyles.readyText}>Waiting for Driver Pickup...</RNText>;
+            return (
+                <RNText style={styles.readyText}>{t('waiting_driver_pickup')}</RNText>
+            );
         }
-        return <RNText style={orderStyles.finalStatusText}>Status: {order.status}</RNText>;
+        return (
+            <RNText style={styles.finalStatusText}>{t('status')}: {translatedStatus}</RNText>
+        );
     };
 
     return (
-        <TouchableOpacity style={orderStyles.card} onPress={() => onOpenDetails(order.id)}>
-            <View style={orderStyles.header}>
-                <RNText style={orderStyles.orderId}>Order #{order.id}</RNText>
+        <TouchableOpacity style={styles.card} onPress={() => onOpenDetails(order.id)}>
+            <View style={styles.header}>
+                <RNText style={styles.orderId}>{t('order_hash')}{order.id}</RNText>
 
-                <View style={orderStyles.headerActions}>
+                <View style={styles.headerActions}>
+
                     <TouchableOpacity
                         onPress={(e) => {
                             e.stopPropagation();
                             onOpenNotes(order.id);
                         }}
-                        style={orderStyles.notesButton}
+                        style={styles.notesButton}
                     >
-                        <MaterialIcons name="chat-bubble-outline" size={20} color="#777" />
+                        <MaterialIcons name="chat-bubble-outline" size={20} color={styles.notesIconColor.color} />
                     </TouchableOpacity>
 
-                    <View style={[orderStyles.statusChip, { backgroundColor: statusStyle.backgroundColor }]}>
-                        <RNText style={[orderStyles.statusChipText, { color: statusStyle.color }]}>
-                            {order.status}
+                    <View style={[styles.statusChip, { backgroundColor: statusStyle.backgroundColor }]}>
+                        <RNText style={[styles.statusChipText, { color: statusStyle.color }]}>
+                            {translatedStatus}
                         </RNText>
                     </View>
                 </View>
             </View>
 
-            <View style={orderStyles.detailRow}>
-                <RNText style={orderStyles.label}>Customer:</RNText>
-                <RNText style={orderStyles.value}>{order.customer}</RNText>
+            <View style={styles.detailRow}>
+                <RNText style={styles.label}>{t('customer')}:</RNText>
+                <RNText style={styles.value}>{order.customer}</RNText>
             </View>
 
-            <View style={orderStyles.detailRow}>
-                <RNText style={orderStyles.label}>Pickup Time:</RNText>
-                <RNText style={orderStyles.value}>{order.pickup_time}</RNText>
+            <View style={styles.detailRow}>
+                <RNText style={styles.label}>{t('pickup_time')}:</RNText>
+                <RNText style={styles.value}>{order.pickup_time}</RNText>
             </View>
 
-            <View style={orderStyles.detailRow}>
-                <RNText style={orderStyles.label}>Total:</RNText>
-                <RNText style={orderStyles.totalValue}>₹{order.total.toFixed(2)}</RNText>
+            <View style={styles.detailRow}>
+                <RNText style={styles.label}>{t('total')}:</RNText>
+                <RNText style={styles.totalValue}>₹{order.total.toFixed(2)}</RNText>
             </View>
 
-            <View style={orderStyles.itemsContainer}>
-                <RNText style={orderStyles.itemsTitle}>Items:</RNText>
+            <View style={styles.itemsContainer}>
+                <RNText style={styles.itemsTitle}>{t('items')}:</RNText>
                 {order.items.map((item, index) => (
-                    <RNText key={index} style={orderStyles.itemText}>
+                    <RNText key={index} style={styles.itemText}>
                         {item.qty}x {item.name}
                     </RNText>
                 ))}
             </View>
 
-            <View style={orderStyles.actionsContainer}>{renderActions()}</View>
+            <View style={styles.actionsContainer}>{renderActions()}</View>
         </TouchableOpacity>
     );
 };
 
-// --- Main Screen ---
+// MAIN SCREEN
 export default function OrderManagementScreen() {
     const router = useRouter();
     const [orders, setOrders] = useState<RestaurantOrder[]>([]);
+    const { theme } = useTheme();
+    const { t } = useLanguage();
 
     useEffect(() => {
         setOrders(getRestaurantOrders() as RestaurantOrder[]);
     }, []);
 
     const handleStatusChange = (id: string, newStatus: RestaurantOrder['status']) => {
-        setOrders((prevOrders) =>
-            prevOrders.map((order) => (order.id === id ? { ...order, status: newStatus } : order))
+        setOrders((prev) =>
+            prev.map((o) => (o.id === id ? { ...o, status: newStatus } : o))
         );
-        Alert.alert('Status Updated', `Order ${id} is now ${newStatus}.`);
+        Alert.alert(t('status_updated'), `${t('order')} ${id} ${t('is_now')} ${t(newStatus.toLowerCase())}.`);
     };
 
     const handleOpenDetails = (id: string) => {
@@ -144,30 +169,107 @@ export default function OrderManagementScreen() {
         router.push({ pathname: '/order-notes', params: { orderId: id } });
     };
 
-    const newOrders = orders.filter((o) => o.status === 'New');
-    const activeOrders = orders.filter((o) => o.status === 'Preparing' || o.status === 'Ready');
-    const completedOrders = orders.filter((o) => o.status === 'Delivered' || o.status === 'Rejected');
+    const newOrders = orders.filter(o => o.status === 'New');
+    const activeOrders = orders.filter(o => o.status === 'Preparing' || o.status === 'Ready');
+    const completedOrders = orders.filter(o => o.status === 'Delivered' || o.status === 'Rejected');
 
-    const renderOrderList = (
-        title: string,
-        list: RestaurantOrder[],
-        onOpenDetails: (id: string) => void,
-        onOpenNotes: (id: string) => void
-    ) => (
+    const dynamicStyles = StyleSheet.create({
+        container: {
+            flex: 1,
+            backgroundColor: theme === 'dark' ? '#121212' : '#f5f5f5'
+        },
+        content: { padding: 15 },
+
+        sectionTitle: {
+            fontSize: 16,
+            fontWeight: '700',
+            color: theme === 'dark' ? '#BB86FC' : '#333',
+            marginBottom: 10,
+            marginTop: 10
+        },
+
+        emptyText: {
+            textAlign: 'center',
+            color: theme === 'dark' ? '#AAA' : '#999',
+            paddingVertical: 15,
+            backgroundColor: theme === 'dark' ? '#1E1E1E' : '#fff',
+            borderRadius: 8,
+            marginBottom: 15,
+        },
+
+        card: {
+            backgroundColor: theme === 'dark' ? '#1E1E1E' : '#fff',
+            borderRadius: 10,
+            padding: 15,
+            marginBottom: 15,
+            elevation: 3,
+            borderWidth: theme === 'dark' ? 1 : 0,
+            borderColor: theme === 'dark' ? '#333' : 'transparent',
+        },
+
+        header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+        headerActions: { flexDirection: 'row', alignItems: 'center' },
+        notesButton: { padding: 5, marginRight: 10 },
+        notesIconColor: { color: theme === 'dark' ? '#BBB' : '#777' },
+
+        orderId: { fontSize: 18, fontWeight: '900', color: theme === 'dark' ? '#FFF' : '#333' },
+
+        statusChip: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 15 },
+        statusChipText: { fontSize: 12, fontWeight: 'bold' },
+
+        detailRow: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            paddingVertical: 3,
+            borderBottomWidth: 1,
+            borderBottomColor: theme === 'dark' ? '#292929' : '#fafafa',
+        },
+
+        label: { fontSize: 14, color: theme === 'dark' ? '#BBB' : '#777' },
+        value: { fontSize: 14, fontWeight: '600', color: theme === 'dark' ? '#FFF' : '#333' },
+
+        totalValue: { fontSize: 16, fontWeight: '800', color: '#4CAF50' },
+
+        itemsContainer: { marginTop: 10, paddingTop: 5, borderTopWidth: 1, borderTopColor: theme === 'dark' ? '#333' : '#eee' },
+        itemsTitle: { fontSize: 14, fontWeight: '700', marginBottom: 5, color: theme === 'dark' ? '#FFF' : '#333' },
+        itemText: { fontSize: 13, color: theme === 'dark' ? '#AAA' : '#666', marginLeft: 5 },
+
+        actionsContainer: { marginTop: 15 },
+        actionsRow: { flexDirection: 'row', justifyContent: 'space-between' },
+
+        actionButton: {
+            paddingVertical: 10,
+            borderRadius: 8,
+            flex: 1,
+            marginHorizontal: 5,
+            alignItems: 'center',
+        },
+        actionButtonText: { color: '#fff', fontSize: 15, fontWeight: 'bold' },
+
+        readyText: { textAlign: 'center', fontSize: 15, fontWeight: '600', color: '#FF9800', padding: 5 },
+        finalStatusText: { textAlign: 'center', fontSize: 15, fontWeight: '600', color: theme === 'dark' ? '#BBB' : '#777', padding: 5 }
+    });
+
+    const renderOrderList = (titleKey: string, list: RestaurantOrder[]) => (
         <View>
-            <RNText style={styles.sectionTitle}>
-                {title} ({list.length})
+            <RNText style={dynamicStyles.sectionTitle}>
+                {t(titleKey)} ({list.length})
             </RNText>
+
             {list.length === 0 ? (
-                <RNText style={styles.emptyText}>No {title.toLowerCase()}.</RNText>
+                <RNText style={dynamicStyles.emptyText}>
+                    {t('no')} {t(titleKey)?.toLowerCase?.() ?? ""}
+                </RNText>
             ) : (
-                list.map((order) => (
+                list.map(order => (
                     <OrderCard
                         key={order.id}
                         order={order}
                         onStatusChange={handleStatusChange}
                         onOpenDetails={handleOpenDetails}
                         onOpenNotes={handleOpenNotes}
+                        styles={dynamicStyles}
+                        t={t}
                     />
                 ))
             )}
@@ -175,74 +277,16 @@ export default function OrderManagementScreen() {
     );
 
     return (
-        <View style={styles.container}>
-            <AppHeader title="Order Management 🛎️" showBack={false} />
-            <ScrollView style={styles.content}>
-                {renderOrderList('New Orders', newOrders, handleOpenDetails, handleOpenNotes)}
-                {renderOrderList('Active Orders', activeOrders, handleOpenDetails, handleOpenNotes)}
-                {renderOrderList('Completed Orders', completedOrders, handleOpenDetails, handleOpenNotes)}
+        <View style={dynamicStyles.container}>
+            <AppHeader title={t("order_management")} showBack={false} />
+
+            <ScrollView style={dynamicStyles.content}>
+                {renderOrderList('new_orders_section', newOrders)}
+                {renderOrderList('active_orders_section', activeOrders)}
+                {renderOrderList('completed_orders_section', completedOrders)}
 
                 <View style={{ height: 50 }} />
             </ScrollView>
         </View>
     );
 }
-
-// --- Styles ---
-const orderStyles = StyleSheet.create({
-    card: {
-        backgroundColor: '#fff',
-        borderRadius: 10,
-        padding: 15,
-        marginBottom: 15,
-        shadowColor: '#000',
-        shadowOpacity: 0.1,
-        shadowRadius: 5,
-        elevation: 3
-    },
-    header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-    headerActions: { flexDirection: 'row', alignItems: 'center' },
-    notesButton: { padding: 5, marginRight: 10 },
-    orderId: { fontSize: 18, fontWeight: '900', color: '#333' },
-    statusChip: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 15 },
-    statusChipText: { fontSize: 12, fontWeight: 'bold' },
-    detailRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        paddingVertical: 3,
-        borderBottomWidth: 1,
-        borderBottomColor: '#fafafa'
-    },
-    label: { fontSize: 14, color: '#777' },
-    value: { fontSize: 14, fontWeight: '600', color: '#333' },
-    totalValue: { fontSize: 16, fontWeight: '800', color: '#4CAF50' },
-    itemsContainer: { marginTop: 10, paddingTop: 5, borderTopWidth: 1, borderTopColor: '#eee' },
-    itemsTitle: { fontSize: 14, fontWeight: '700', marginBottom: 5, color: '#333' },
-    itemText: { fontSize: 13, color: '#666', marginLeft: 5 },
-    actionsContainer: { marginTop: 15 },
-    actionsRow: { flexDirection: 'row', justifyContent: 'space-between' },
-    actionButton: {
-        paddingVertical: 10,
-        borderRadius: 8,
-        flex: 1,
-        marginHorizontal: 5,
-        alignItems: 'center'
-    },
-    actionButtonText: { color: '#fff', fontSize: 15, fontWeight: 'bold' },
-    readyText: { textAlign: 'center', fontSize: 15, fontWeight: '600', color: '#FF9800', padding: 5 },
-    finalStatusText: { textAlign: 'center', fontSize: 15, fontWeight: '600', color: '#777', padding: 5 }
-});
-
-const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#f5f5f5' },
-    content: { padding: 15 },
-    sectionTitle: { fontSize: 16, fontWeight: '700', color: '#333', marginBottom: 10, marginTop: 10 },
-    emptyText: {
-        textAlign: 'center',
-        color: '#999',
-        paddingVertical: 15,
-        backgroundColor: '#fff',
-        borderRadius: 8,
-        marginBottom: 15
-    }
-});
