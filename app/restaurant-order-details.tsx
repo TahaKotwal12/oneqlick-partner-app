@@ -55,7 +55,7 @@ export default function RestaurantOrderDetailsScreen() {
 
     const [order, setOrder] = useState<RestaurantOrder | null>(null);
     const [localNotes, setLocalNotes] = useState(''); 
-    const [status, setStatus] = useState(t('loading'));
+    const [status, setStatus] = useState(t('loading_order_details')); // Corrected initial state
 
     // 1. Fetch Order Details from Mock
     useEffect(() => {
@@ -69,10 +69,12 @@ export default function RestaurantOrderDetailsScreen() {
 
         if (selectedOrder) {
             setOrder(selectedOrder);
+            // 🔑 Translate status for display
             setStatus(t(selectedOrder.status.toLowerCase())); 
             setLocalNotes(selectedOrder.notes || ''); 
         } else {
             setOrder(allOrders[0] || null);
+            // 🔑 Use translated error key
             setStatus(allOrders[0]?.status ? t(allOrders[0].status.toLowerCase()) : t('error_order_not_found')); 
             setLocalNotes(allOrders[0]?.notes || '');
         }
@@ -82,11 +84,12 @@ export default function RestaurantOrderDetailsScreen() {
     const handleSaveNotes = () => {
         if (order) {
             setOrder({ ...order, notes: localNotes });
+            // 🔑 Use translation keys for Alert
             Alert.alert(t("notes_saved"), t("internal_notes_saved")); 
         }
     };
     
-    // 🔑 Dynamic Styles Definition
+    // 泊 Dynamic Styles Definition
     const dynamicStyles = StyleSheet.create({
         container: { flex: 1, backgroundColor: theme === 'dark' ? '#121212' : '#f5f5f5' },
         loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
@@ -176,6 +179,7 @@ export default function RestaurantOrderDetailsScreen() {
         return (
             <View style={dynamicStyles.loadingContainer}>
                 <RNText style={{ color: theme === 'dark' ? '#FFF' : '#333' }}>
+                    {/* 🔑 Use translated loading text */}
                     {t('loading_order_details')}...
                 </RNText>
             </View>
@@ -185,6 +189,7 @@ export default function RestaurantOrderDetailsScreen() {
     return (
         <View style={dynamicStyles.container}>
             <AppHeader 
+                // 🔑 Use translated order hash
                 title={`${t('order_hash')}${order.id}`} 
                 showBack={true} 
             />
@@ -198,16 +203,19 @@ export default function RestaurantOrderDetailsScreen() {
                 </View>
 
                 {/* Customer & Order Summary */}
-                <RNText style={dynamicStyles.sectionTitle}>{t('customer_order_summary')} 🧑</RNText> 
+                {/* 🔑 Use translated section title */}
+                <RNText style={dynamicStyles.sectionTitle}>{t('customer_order_summary')} 💡</RNText> 
                 <View style={dynamicStyles.card}>
                     <DetailRow icon="person" label={t("customer")} value={order.customer} styles={dynamicStyles} /> 
                     <DetailRow icon="access-time" label={t("pickup_time")} value={order.pickup_time} styles={dynamicStyles} /> 
                     
+                    {/* 🔑 Use translated label, currency symbol remains hardcoded for now */}
                     <DetailRow icon="payment" label={t("order_total")} value={`₹${order.total.toFixed(2)}`} styles={dynamicStyles} /> 
                 </View>
 
                 {/* Items list */}
-                <RNText style={dynamicStyles.sectionTitle}>{t('order_items')} 🍔</RNText> 
+                {/* 🔑 Use translated section title */}
+                <RNText style={dynamicStyles.sectionTitle}>{t('order_items')} 📦</RNText> 
                 <View style={dynamicStyles.card}>
                     {order.items.map((item, index) => (
                         <ItemRow key={index} name={item.name} qty={item.qty} styles={dynamicStyles} />
@@ -215,11 +223,13 @@ export default function RestaurantOrderDetailsScreen() {
                 </View>
 
                 {/* Internal Notes */}
+                {/* 🔑 Use translated section title */}
                 <RNText style={dynamicStyles.sectionTitle}>{t('internal_notes')} 📝</RNText> 
                 <View style={[dynamicStyles.card, dynamicStyles.notesCard]}>
                     <TextInput
                         style={dynamicStyles.notesInput}
                         multiline
+                        // 🔑 Use translated placeholder
                         placeholder={t("notes_placeholder")} 
                         value={localNotes}
                         onChangeText={setLocalNotes}
@@ -227,9 +237,11 @@ export default function RestaurantOrderDetailsScreen() {
                         placeholderTextColor={theme === 'dark' ? '#999' : '#aaa'}
                     />
                     <View style={dynamicStyles.noteActionRow}>
+                        {/* 🔑 Use translated hint */}
                         <RNText style={dynamicStyles.saveHint}>{t('notes_save_hint')}</RNText> 
                         <TouchableOpacity style={dynamicStyles.saveButton} onPress={handleSaveNotes}>
-                             <RNText style={dynamicStyles.saveButtonText}>{t('save')}</RNText> 
+                            {/* 🔑 Use translated save button text */}
+                            <RNText style={dynamicStyles.saveButtonText}>{t('save')}</RNText> 
                         </TouchableOpacity>
                     </View>
                 </View>

@@ -7,6 +7,7 @@ import AppHeader from '../components/common/AppHeader';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context'; 
 import { useTheme } from '../contexts/ThemeContext'; 
+// 👇 I18N IMPORT
 import { useLanguage } from '../contexts/LanguageContext'; 
 
 // --- Mock Data and Interfaces ---
@@ -20,7 +21,7 @@ interface Message {
 const MOCK_CHAT_HISTORY: Message[] = [
     { id: 1, sender: 'partner', text: "Please confirm order preparation is underway. ETA?", timestamp: "10:05 AM" },
     { id: 2, sender: 'user', text: "Just waiting on the tandoor bread. Should be ready in 5 mins.", timestamp: "10:07 AM" },
- { id: 3, sender: 'partner', text: "Understood. Thanks!", timestamp: "10:07 AM" },
+    { id: 3, sender: 'partner', text: "Understood. Thanks!", timestamp: "10:07 AM" },
 ];
 
 // --- Helper Component: Chat Bubble ---
@@ -49,6 +50,7 @@ export default function OrderNotesScreen() {
     
     const insets = useSafeAreaInsets();
     const { theme } = useTheme();
+    // 👇 Use language context
     const { t } = useLanguage();
 
     useEffect(() => {
@@ -169,6 +171,7 @@ export default function OrderNotesScreen() {
             keyboardVerticalOffset={0}
         >
             <AppHeader 
+                // 🔑 Use translation key
                 title={`${t('order_hash')} ${orderId} ${t('notes')}`} 
                 showBack={true} 
             />
@@ -188,6 +191,7 @@ export default function OrderNotesScreen() {
             <View style={[dynamicStyles.inputContainer, { paddingBottom: insets.bottom || 10 }]}>
                 <TextInput
                     style={dynamicStyles.textInput}
+                    // 🔑 Use translation key
                     placeholder={t("type_message_note")}
                     placeholderTextColor={theme === 'dark' ? '#999' : '#888'}
                     value={inputText}

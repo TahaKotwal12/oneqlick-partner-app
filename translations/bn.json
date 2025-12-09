@@ -110,5 +110,21 @@
   "ready_for_pickup": "পিকআপের জন্য প্রস্তুত",
   "in_transit": "পরিবহনে",
   "cod": "সিওডি",
-  "online_payment": "অনলাইন"
+  "online_payment": "অনলাইন",
+  "unread": "অপঠিত",
+  "no_new_notifications": "কোনো নতুন বিজ্ঞপ্তি নেই",
+  "loading_order_details": "অর্ডার বিবরণ লোড হচ্ছে",
+  "error_no_order_id": "ত্রুটি: কোনো অর্ডার আইডি নেই",
+  "error_order_not_found": "ত্রুটি: অর্ডার পাওয়া যায়নি",
+  "internal_notes_saved": "অভ্যন্তরীণ নোট সফলভাবে সংরক্ষণ করা হয়েছে।",
+  "notes_saved": "নোট সংরক্ষণ করা হয়েছে",
+  "customer_order_summary": "গ্রাহক এবং অর্ডার সারাংশ",
+  "order_total": "মোট অর্ডার",
+  "order_items": "অর্ডারের আইটেম",
+  "internal_notes": "অভ্যন্তরীণ নোট",
+  "notes_placeholder": "এই অর্ডারের জন্য ব্যক্তিগত নোট যোগ করুন...",
+  "notes_save_hint": "আপনি টাইপিং শেষ করলে নোটগুলি স্বয়ংক্রিয়ভাবে সংরক্ষিত হবে।",
+  "save": "সংরক্ষণ করুন",
+  "notes": "নোট",
+  "type_message_note": "একটি বার্তা বা নোট টাইপ করুন..."
 }

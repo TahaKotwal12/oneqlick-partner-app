@@ -110,5 +110,21 @@
   "ready_for_pickup": "पिकअप के लिए तैयार",
   "in_transit": "परिवहन में",
   "cod": "सीओडी",
-  "online_payment": "ऑनलाइन"
+  "online_payment": "ऑनलाइन",
+  "unread": "अपठित",
+  "no_new_notifications": "कोई नई सूचनाएं नहीं",
+  "loading_order_details": "ऑर्डर विवरण लोड हो रहा है",
+  "error_no_order_id": "त्रुटि: कोई ऑर्डर आईडी नहीं",
+  "error_order_not_found": "त्रुटि: ऑर्डर नहीं मिला",
+  "internal_notes_saved": "आंतरिक नोट्स सफलतापूर्वक सहेजे गए।",
+  "notes_saved": "नोट्स सहेजे गए",
+  "customer_order_summary": "ग्राहक और ऑर्डर सारांश",
+  "order_total": "कुल ऑर्डर",
+  "order_items": "ऑर्डर आइटम",
+  "internal_notes": "आंतरिक नोट्स",
+  "notes_placeholder": "इस ऑर्डर के लिए निजी नोट्स जोड़ें...",
+  "notes_save_hint": "जब आप टाइप करना समाप्त करते हैं तो नोट्स स्वचालित रूप से सहेजे जाते हैं।",
+  "save": "सहेजें",
+  "notes": "नोट्स",
+  "type_message_note": "एक संदेश या नोट टाइप करें..."
 }

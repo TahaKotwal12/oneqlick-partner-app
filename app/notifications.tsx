@@ -5,6 +5,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Pressable 
 import AppHeader from '../components/common/AppHeader';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext'; 
+// 👇 I18N IMPORT
 import { useLanguage } from '../contexts/LanguageContext'; 
 
 interface Notification {
@@ -55,6 +56,7 @@ const NotificationItem = ({ item, onPress, styles }: { item: Notification, onPre
 
 export default function NotificationsScreen() {
     const { theme } = useTheme();
+    // 👇 Use language context
     const { t } = useLanguage(); 
     
     const [notifications, setNotifications] = useState<Notification[]>(MOCK_NOTIFICATIONS);
@@ -183,9 +185,11 @@ export default function NotificationsScreen() {
 
     return (
         <View style={dynamicStyles.container}>
+            {/* 🔑 Use translation key for header title */}
             <AppHeader title={t("notifications")} showBack={true} /> 
             
             <ScrollView style={dynamicStyles.content}>
+                {/* 🔑 Use translation key for section title */}
                 <Text style={dynamicStyles.sectionTitle}>{t('unread')} ({notifications.filter(n => !n.is_read).length})</Text> 
                 
                 {notifications.map(notification => (
@@ -215,6 +219,7 @@ export default function NotificationsScreen() {
                             <Text style={dynamicStyles.modalBody}>{selectedNotification.message}</Text>
                             <Text style={dynamicStyles.modalTime}>{selectedNotification.time}</Text>
                             <TouchableOpacity onPress={handleCloseModal} style={dynamicStyles.closeButton}>
+                                {/* 🔑 Use translation key for close button */}
                                 <Text style={dynamicStyles.closeButtonText}>{t('close')}</Text> 
                             </TouchableOpacity>
                         </View>

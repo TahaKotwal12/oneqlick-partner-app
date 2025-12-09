@@ -110,5 +110,21 @@
   "ready_for_pickup": "Ready for Pickup",
   "in_transit": "In Transit",
   "cod": "COD",
-  "online_payment": "Online"
+  "online_payment": "Online",
+  "unread": "Unread",
+  "no_new_notifications": "No new notifications",
+  "loading_order_details": "Loading Order Details",
+  "error_no_order_id": "Error: No Order ID",
+  "error_order_not_found": "Error: Order Not Found",
+  "internal_notes_saved": "Internal notes saved successfully.",
+  "notes_saved": "Notes Saved",
+  "customer_order_summary": "Customer & Order Summary",
+  "order_total": "Order Total",
+  "order_items": "Order Items",
+  "internal_notes": "Internal Notes",
+  "notes_placeholder": "Add private notes for this order...",
+  "notes_save_hint": "Notes save automatically when you finish typing.",
+  "save": "Save",
+  "notes": "Notes",
+  "type_message_note": "Type a message or note..."
 }
