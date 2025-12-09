@@ -263,7 +263,7 @@ export default function ProfileScreen() {
         <View style={dynamicStyles.metricsRow}>
           <MetricCard
             title={t("earnings")}
-            value={`₹${profile.earnings_today.toFixed(2)}`} // 👉 CHANGED FROM $
+            value={`₹${profile.earnings_today.toFixed(2)}`}
             icon="attach-money"
             color="#4CAF50"
             styleSet={dynamicStyles}
@@ -280,23 +280,6 @@ export default function ProfileScreen() {
 
         {/* Links */}
         <View style={{ marginTop: 20 }}>
-          <TouchableOpacity
-            style={dynamicStyles.linkItem}
-            onPress={() => router.push("/settings")}
-          >
-            <MaterialIcons
-              name="settings"
-              size={24}
-              color={dynamicStyles.linkIconColor.color}
-            />
-            <Text style={dynamicStyles.linkText}>{t("settings")}</Text>
-            <MaterialIcons
-              name="chevron-right"
-              size={24}
-              color={theme === "dark" ? "#444" : "#ccc"}
-            />
-          </TouchableOpacity>
-
           <TouchableOpacity
             style={dynamicStyles.linkItem}
             onPress={() =>
