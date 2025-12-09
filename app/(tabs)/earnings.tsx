@@ -1,199 +1,183 @@
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
-import { Text, Card, Title, Paragraph, ActivityIndicator, Surface, SegmentedButtons } from 'react-native-paper';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { GlobalStyles } from '../../styles/globalStyles';
-import { partnerAPI } from '../../services/partnerService';
-import { useAuth } from '../../hooks/useAuthZustand';
-import { useTheme } from '../../contexts/ThemeContext'; 
-import { useLanguage } from '../../contexts/LanguageContext'; // 👈 I18N IMPORT
+// oneQlick/app/(tabs)/earnings.tsx
 
+import React, { useState, useEffect } from 'react';
+import { View, ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
+import { Text, Card, Surface } from 'react-native-paper';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useTheme } from '../../contexts/ThemeContext';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { useAuth } from '../../hooks/useAuthZustand';
+
+// --- Mock Data ---
+const TODAY_DATA = {
+  total: "1,250",
+  balance: "450",
+  orders: 12,
+  hours: "8h 30m",
+  distance: "42 km",
+  breakdown: [
+    { label: "Order Pay", amount: 850 },
+    { label: "Surge Pay", amount: 150 },
+    { label: "Target Pay", amount: 120 },
+    { label: "Customer Tips", amount: 130 },
+  ],
+  trips: [
+    { id: "ZM-8821", time: "8:45 PM", restaurant: "Pizza Hut", amount: 85, status: "Completed" },
+    { id: "ZM-8820", time: "8:15 PM", restaurant: "Burger King", amount: 62, status: "Completed" },
+  ]
+};
+
+const WEEKLY_DATA = {
+  total: "8,450",
+  balance: "450",
+  orders: 84,
+  hours: "52h 10m",
+  distance: "315 km",
+  breakdown: [
+    { label: "Order Pay", amount: 5950 },
+    { label: "Surge Pay", amount: 900 },
+    { label: "Target Pay", amount: 800 },
+    { label: "Customer Tips", amount: 800 },
+  ],
+  trips: [
+    { id: "ZM-8815", time: "Yesterday", restaurant: "Weekly Incentive", amount: 500, status: "Bonus" },
+    { id: "ZM-8814", time: "Yesterday", restaurant: "KFC", amount: 95, status: "Completed" },
+  ]
+};
 
 export default function EarningsScreen() {
-    const { user } = useAuth();
-    const { theme } = useTheme(); 
-    const { t } = useLanguage(); // 👈 USE LANGUAGE HOOK
-    
-    const [earnings, setEarnings] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
-    const [refreshing, setRefreshing] = useState(false);
-    const [period, setPeriod] = useState<'today' | 'week' | 'month'>('today');
+  const { theme } = useTheme();
+  const { t } = useLanguage();
+  const { user } = useAuth();
+  const isDark = theme === 'dark';
 
-    const fetchEarnings = async () => {
-        try {
-            const api = user?.role === 'restaurant_owner'
-                ? partnerAPI.restaurant.getEarnings
-                : partnerAPI.delivery.getEarnings;
+  const [period, setPeriod] = useState<'today' | 'weekly'>('today');
+  const [data, setData] = useState(TODAY_DATA);
+  const [refreshing, setRefreshing] = useState(false);
 
-            const response = await api(period);
-            if (response.success && response.data) {
-                setEarnings(response.data);
-            }
-        } catch (error) {
-            console.error('Error fetching earnings:', error);
-        } finally {
-            setLoading(false);
-            setRefreshing(false);
-        }
-    };
+  useEffect(() => {
+    setData(period === 'today' ? TODAY_DATA : WEEKLY_DATA);
+  }, [period]);
 
-    useEffect(() => {
-        fetchEarnings();
-    }, [period]);
+  const onRefresh = () => {
+    setRefreshing(true);
+    setTimeout(() => setRefreshing(false), 800);
+  };
 
-    const onRefresh = () => {
-        setRefreshing(true);
-        fetchEarnings();
-    };
+  const cardStyle = {
+    backgroundColor: isDark ? '#1E1E1E' : '#ffffff',
+    padding: 16,
+    borderRadius: 14,
+    marginBottom: 16,
+  };
 
-    const dynamicStyles = StyleSheet.create({
-        header: {
-            padding: 20,
-            backgroundColor: theme === 'dark' ? '#1E1E1E' : 'white',
-            elevation: 2,
-            borderBottomWidth: theme === 'dark' ? 1 : 0,
-            borderBottomColor: theme === 'dark' ? '#333' : 'transparent',
-        },
-        title: {
-            fontSize: 24,
-            fontWeight: 'bold',
-            marginBottom: 16,
-            color: theme === 'dark' ? '#FFFFFF' : '#1F2937',
-        },
-        periodSelector: {
-            marginBottom: 8,
-        },
-        content: {
-            padding: 20,
-        },
-        loader: {
-            marginTop: 40,
-        },
-        card: {
-            marginBottom: 20,
-            backgroundColor: theme === 'dark' ? '#1E1E1E' : 'white',
-            elevation: 2,
-        },
-        amount: {
-            fontSize: 36,
-            fontWeight: 'bold',
-            color: '#4F46E5',
-            marginVertical: 8,
-        },
-        subtitle: {
-            color: theme === 'dark' ? '#AAA' : '#6B7280',
-            fontSize: 16,
-        },
-        statsContainer: {
-            flexDirection: 'row',
-            gap: 16,
-            marginBottom: 24,
-        },
-        statBox: {
-            flex: 1,
-            padding: 16,
-            borderRadius: 8,
-            backgroundColor: theme === 'dark' ? '#1E1E1E' : 'white',
-            elevation: 1,
-            borderWidth: theme === 'dark' ? 1 : 0,
-            borderColor: theme === 'dark' ? '#333' : 'transparent',
-        },
-        statLabel: {
-            color: theme === 'dark' ? '#AAA' : '#6B7280',
-            fontSize: 14,
-            marginBottom: 4,
-        },
-        statValue: {
-            fontSize: 20,
-            fontWeight: 'bold',
-            color: theme === 'dark' ? '#FFFFFF' : '#1F2937',
-        },
-        sectionTitle: {
-            fontSize: 20,
-            fontWeight: 'bold',
-            marginBottom: 12,
-            color: theme === 'dark' ? '#BB86FC' : '#1F2937',
-        },
-        emptyState: {
-            padding: 24,
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderRadius: 8,
-            backgroundColor: theme === 'dark' ? '#292929' : '#F3F4F6',
-            borderWidth: theme === 'dark' ? 1 : 0,
-            borderColor: theme === 'dark' ? '#444' : 'transparent',
-        },
-        emptyText: {
-            color: theme === 'dark' ? '#BBB' : '#6B7280',
-        },
-    });
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? '#131313' : '#f5f5f5' }}>
+      
+      {/* Header */}
+      <View style={{ padding: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Text style={{ fontSize: 24, fontWeight: '700', color: isDark ? '#fff' : '#000' }}>
+          {t('earnings')}
+        </Text>
 
+        <View style={{ flexDirection: 'row', gap: 20 }}>
+          <TouchableOpacity onPress={() => setPeriod('today')}>
+            <Text style={{ 
+              color: period === 'today' ? '#4F46E5' : '#888',
+              fontWeight: '600'
+            }}>{t('today')}</Text>
+          </TouchableOpacity>
 
-    const themedTitleStyle = { color: theme === 'dark' ? '#FFFFFF' : '#1F2937' };
+          <TouchableOpacity onPress={() => setPeriod('weekly')}>
+            <Text style={{ 
+              color: period === 'weekly' ? '#4F46E5' : '#888',
+              fontWeight: '600'
+            }}>{t('this_week')}</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
 
+      <ScrollView
+        contentContainerStyle={{ padding: 16 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      >
+        
+        {/* Total Earnings */}
+        <Card style={cardStyle}>
+          <Card.Content>
+            <Text style={{ fontSize: 14, color: '#888' }}>Total Earnings</Text>
+            <Text style={{ fontSize: 34, fontWeight: '800', color: '#4F46E5' }}>₹{data.total}</Text>
+            <Text style={{ fontSize: 14, color: '#888' }}>Balance: ₹{data.balance}</Text>
+          </Card.Content>
+        </Card>
 
-    return (
-        <SafeAreaView style={GlobalStyles.layout.container}>
-            <View style={dynamicStyles.header}>
-                <Text style={dynamicStyles.title}>{t('earnings')}</Text> 
-                <SegmentedButtons
-                    value={period}
-                    onValueChange={value => setPeriod(value as any)}
-                    buttons={[
-                        { value: 'today', label: t('today') },           
-                        { value: 'week', label: t('this_week') },       
-                        { value: 'month', label: t('this_month') },     
-                    ]}
-                    style={dynamicStyles.periodSelector}
-                />
-            </View>
+        {/* Stats Grid */}
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
+          
+          <Surface style={{
+            flex: 1, margin: 5, padding: 16, borderRadius: 14,
+            backgroundColor: isDark ? '#1b1b1b' : '#fafafa', alignItems: 'center'
+          }}>
+            <MaterialCommunityIcons name="bike" size={30} color="#4F46E5" />
+            <Text style={{ fontSize: 18, fontWeight: '700' }}>{data.orders}</Text>
+            <Text style={{ fontSize: 12, color: '#888' }}>Orders</Text>
+          </Surface>
 
-            <ScrollView
-                contentContainerStyle={dynamicStyles.content}
-                refreshControl={
-                    <RefreshControl 
-                        refreshing={refreshing} 
-                        onRefresh={onRefresh} 
-                        tintColor={theme === 'dark' ? '#FFFFFF' : '#4F46E5'}
-                    />
-                }
-            >
-                {loading && !refreshing ? (
-                    <ActivityIndicator style={dynamicStyles.loader} size="large" color="#4F46E5" />
-                ) : earnings ? (
-                    <>
-                        <Card style={dynamicStyles.card}>
-                            <Card.Content>
-                                <Title style={themedTitleStyle}>{t('total_earnings')}</Title> 
-                                <Paragraph style={dynamicStyles.amount}>${earnings.total_amount || '0.00'}</Paragraph>
-                                <Paragraph style={dynamicStyles.subtitle}>
-                                    {earnings.total_orders || 0} {user?.role === 'restaurant_owner' ? t('orders') : t('deliveries_label')} 
-                                </Paragraph>
-                            </Card.Content>
-                        </Card>
+          <Surface style={{
+            flex: 1, margin: 5, padding: 16, borderRadius: 14,
+            backgroundColor: isDark ? '#1b1b1b' : '#fafafa', alignItems: 'center'
+          }}>
+            <MaterialCommunityIcons name="clock-outline" size={30} color="#f97316" />
+            <Text style={{ fontSize: 18, fontWeight: '700' }}>{data.hours}</Text>
+            <Text style={{ fontSize: 12, color: '#888' }}>Login Hrs</Text>
+          </Surface>
 
-                        <View style={dynamicStyles.statsContainer}>
-                            <Surface style={dynamicStyles.statBox}>
-                                <Text style={dynamicStyles.statLabel}>{t('tips')}</Text> 
-                                <Text style={dynamicStyles.statValue}>${earnings.tips || '0.00'}</Text>
-                            </Surface>
-                            <Surface style={dynamicStyles.statBox}>
-                                <Text style={dynamicStyles.statLabel}>{t('bonus')}</Text> 
-                                <Text style={dynamicStyles.statValue}>${earnings.bonus || '0.00'}</Text>
-                            </Surface>
-                        </View>
+          <Surface style={{
+            flex: 1, margin: 5, padding: 16, borderRadius: 14,
+            backgroundColor: isDark ? '#1b1b1b' : '#fafafa', alignItems: 'center'
+          }}>
+            <MaterialCommunityIcons name="map-marker" size={30} color="#a855f7" />
+            <Text style={{ fontSize: 18, fontWeight: '700' }}>{data.distance}</Text>
+            <Text style={{ fontSize: 12, color: '#888' }}>Distance</Text>
+          </Surface>
 
-                        <Title style={dynamicStyles.sectionTitle}>{t('recent_activity')}</Title> 
-                        <Surface style={dynamicStyles.emptyState}>
-                            <Text style={dynamicStyles.emptyText}>{t('no_recent_activity')}</Text> 
-                        </Surface>
-                    </>
-                ) : (
-                    <Surface style={dynamicStyles.emptyState}>
-                        <Text style={dynamicStyles.emptyText}>{t('no_earnings_data')}</Text> 
-                    </Surface>
-                )}
-            </ScrollView>
-        </SafeAreaView>
-    );
+        </View>
+
+        {/* Earnings Breakdown */}
+        <Card style={cardStyle}>
+          <Card.Content>
+            {data.breakdown.map((item, index) => (
+              <View key={index} style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
+                <Text>{item.label}</Text>
+                <Text>₹{item.amount}</Text>
+              </View>
+            ))}
+          </Card.Content>
+        </Card>
+
+        {/* Trips */}
+        <Text style={{ fontSize: 20, fontWeight: '700', marginBottom: 8 }}>Trips & Adjustments</Text>
+
+        {data.trips.map((trip, index) => (
+          <Card key={index} style={cardStyle}>
+            <Card.Content style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+              <View>
+                <Text style={{ fontWeight: '700' }}>{trip.restaurant}</Text>
+                <Text style={{ fontSize: 12, color: '#888' }}>{trip.time} • {trip.id}</Text>
+              </View>
+
+              <Text style={{
+                color: trip.status === 'Bonus' ? '#f59e0b' : '#16a34a',
+                fontWeight: '700'
+              }}>
+                + ₹{trip.amount}
+              </Text>
+            </Card.Content>
+          </Card>
+        ))}
+
+      </ScrollView>
+    </SafeAreaView>
+  );
 }

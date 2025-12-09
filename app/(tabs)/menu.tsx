@@ -8,15 +8,23 @@ import { partnerAPI } from '../../services/partnerService';
 import { FoodItem } from '../../types';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext'; 
-import { useLanguage } from '../../contexts/LanguageContext'; // 👈 I18N IMPORT
+import { useLanguage } from '../../contexts/LanguageContext';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-    UIManager.setLayoutAnimationEnabledExperimental(true);
+    UIManager.setLayoutAnimationEnabledExperimental(true);
+}
+
+// Updated: Removed is_veg
+interface NewItemFormData {
+    name: string;
+    price: string;
+    description: string;
+    category_id: string; 
 }
 
 export default function MenuScreen() {
     const { theme } = useTheme(); 
-    const { t } = useLanguage(); // 👈 USE LANGUAGE HOOK
+    const { t } = useLanguage();
 
     const [menuItems, setMenuItems] = useState<FoodItem[]>([]);
     const [loading, setLoading] = useState(true);
@@ -24,11 +32,25 @@ export default function MenuScreen() {
     const [togglingId, setTogglingId] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+    
+    // EDIT ITEM STATE
     const [isEditModalVisible, setIsEditModalVisible] = useState(false);
     const [editingItem, setEditingItem] = useState<FoodItem | null>(null);
-    const [modalFormData, setModalFormData] = useState({ name: '', price: '0.00' });
+    const [editModalFormData, setEditModalFormData] = useState({ name: '', price: '0.00' });
+    
+    // ADD ITEM STATE
+    const [isAddModalVisible, setIsAddModalVisible] = useState(false);
+    // Updated: Removed is_veg from initial state
+    const [newModalFormData, setNewModalFormData] = useState<NewItemFormData>({ 
+        name: '', 
+        price: '0.00', 
+        description: '',
+        category_id: '',
+    });
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-
+    // --- API CALLS & DATA HANDLING ---
+    
     const fetchMenu = async () => {
         try {
             const response = await partnerAPI.restaurant.getMenu();
@@ -76,9 +98,11 @@ export default function MenuScreen() {
         }
     };
 
+    // --- EDIT MODAL HANDLERS ---
+
     const openEditModal = (item: FoodItem) => {
         setEditingItem(item);
-        setModalFormData({ name: item.name, price: item.price.toFixed(2) });
+        setEditModalFormData({ name: item.name, price: item.price.toFixed(2) }); 
         setIsEditModalVisible(true);
     };
 
@@ -90,8 +114,8 @@ export default function MenuScreen() {
     const handleEditSubmit = () => {
         if (!editingItem) return;
 
-        const newName = modalFormData.name.trim();
-        const newPrice = parseFloat(modalFormData.price);
+        const newName = editModalFormData.name.trim();
+        const newPrice = parseFloat(editModalFormData.price);
 
         if (!newName || isNaN(newPrice) || newPrice < 0) {
             Alert.alert(t('invalid_input'), t('valid_name_price_required'));
@@ -106,6 +130,72 @@ export default function MenuScreen() {
         ));
         closeEditModal();
     };
+    
+    // --- ADD MODAL HANDLERS ---
+    
+    const openAddModal = () => {
+        // Reset form data to initial state when opening the Add Modal
+        // Updated: Removed is_veg from reset
+        setNewModalFormData({ 
+            name: '', 
+            price: '0.00', 
+            description: '',
+            category_id: '',
+        });
+        setIsAddModalVisible(true);
+    };
+
+    const closeAddModal = () => {
+        setIsAddModalVisible(false);
+    };
+
+    const handleAddSubmit = async () => {
+        if (isSubmitting) return;
+
+        // Updated: Removed is_veg from destructuring
+        const { name, price, description, category_id } = newModalFormData;
+
+        const newName = name.trim();
+        const newPrice = parseFloat(price);
+        const newCategoryId = category_id.trim();
+        
+        // Basic Validation
+        if (!newName || isNaN(newPrice) || newPrice <= 0 || !newCategoryId) {
+            Alert.alert(t('invalid_input'), t('valid_details_required'));
+            return;
+        }
+
+        setIsSubmitting(true);
+
+        try {
+            // Updated: Removed is_veg from newItemData payload
+            const newItemData = {
+                name: newName,
+                price: newPrice,
+                description,
+                category_id: newCategoryId,
+            };
+            
+            // NOTE: Assuming partnerAPI.restaurant.createMenuItem exists and handles the payload
+            const response = await partnerAPI.restaurant.createMenuItem(newItemData); 
+
+            if (response.success) {
+                Alert.alert(t('success'), t('item_added_successfully'));
+                fetchMenu(); 
+                closeAddModal();
+            } else {
+                Alert.alert(t('error'), response.error || t('failed_add_item'));
+            }
+        } catch (error) {
+            console.error('Error adding new menu item:', error);
+            Alert.alert(t('error'), t('unexpected_error'));
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+
+    // --- RENDERING LOGIC ---
 
     const toggleCategory = (category: string) => {
         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -139,7 +229,8 @@ export default function MenuScreen() {
         return acc;
     }, {} as Record<string, FoodItem[]>);
     
-    
+    // --- DYNAMIC STYLES ---
+
     const dynamicStyles = StyleSheet.create({
         container: {
             flex: 1,
@@ -287,21 +378,7 @@ export default function MenuScreen() {
             fontWeight: 'bold',
             color: theme === 'dark' ? '#FFFFFF' : DesignSystem.colors.text.primary,
         },
-        vegBadge: {
-            width: 18,
-            height: 18,
-            borderWidth: 1.5,
-            borderColor: DesignSystem.colors.success,
-            borderRadius: 3,
-            justifyContent: 'center',
-            alignItems: 'center',
-        },
-        vegDot: {
-            width: 8,
-            height: 8,
-            borderRadius: 4,
-            backgroundColor: DesignSystem.colors.success,
-        },
+        // Removed vegBadge and vegDot styles
         itemDescription: {
             fontSize: 13,
             color: theme === 'dark' ? '#AAA' : DesignSystem.colors.text.secondary,
@@ -378,6 +455,7 @@ export default function MenuScreen() {
         saveButton: {
             minWidth: 120,
         },
+        // Removed modalVegSwitchContainer and modalVegLabel styles
     });
 
 
@@ -394,11 +472,7 @@ export default function MenuScreen() {
                             />
                         </TouchableOpacity>
                         <Text style={dynamicStyles.itemName} numberOfLines={1}>{item.name}</Text>
-                        {item.is_veg && (
-                            <View style={dynamicStyles.vegBadge}>
-                                <View style={dynamicStyles.vegDot} />
-                            </View>
-                        )}
+                        {/* Removed the item.is_veg badge rendering */}
                     </View>
                     {item.description && (
                         <Text style={dynamicStyles.itemDescription} numberOfLines={2}>{item.description}</Text>
@@ -547,7 +621,7 @@ export default function MenuScreen() {
             <FAB
                 icon="plus"
                 style={dynamicStyles.fab}
-                onPress={() => Alert.alert(t('coming_soon'), t('add_item_soon'))}
+                onPress={openAddModal}
                 label={t('add_item')}
                 color="white"
             />
@@ -563,16 +637,16 @@ export default function MenuScreen() {
 
                     <TextInput
                         label={t('item_name')}
-                        value={modalFormData.name}
-                        onChangeText={(name) => setModalFormData(p => ({ ...p, name }))}
+                        value={editModalFormData.name} 
+                        onChangeText={(name) => setEditModalFormData(p => ({ ...p, name }))} 
                         mode="outlined"
                         style={dynamicStyles.modalInput}
                     />
 
                     <TextInput
                         label={t('price_currency')}
-                        value={modalFormData.price}
-                        onChangeText={(price) => setModalFormData(p => ({ ...p, price }))}
+                        value={editModalFormData.price} 
+                        onChangeText={(price) => setEditModalFormData(p => ({ ...p, price }))} 
                         keyboardType="numeric"
                         mode="outlined"
                         style={dynamicStyles.modalInput}
@@ -593,6 +667,72 @@ export default function MenuScreen() {
                 </Modal>
             </Portal>
 
+            {/* ADD MODAL COMPONENT */}
+            <Portal>
+                <Modal
+                    visible={isAddModalVisible}
+                    onDismiss={closeAddModal}
+                    contentContainerStyle={dynamicStyles.modalContent}
+                >
+                    <Text style={dynamicStyles.modalTitle}>{t('add_new_menu_item')}</Text>
+
+                    {/* Item Name */}
+                    <TextInput
+                        label={t('item_name')}
+                        value={newModalFormData.name}
+                        onChangeText={(name) => setNewModalFormData(p => ({ ...p, name }))}
+                        mode="outlined"
+                        style={dynamicStyles.modalInput}
+                    />
+
+                    {/* Price */}
+                    <TextInput
+                        label={t('price_currency')}
+                        value={newModalFormData.price}
+                        onChangeText={(price) => setNewModalFormData(p => ({ ...p, price }))}
+                        keyboardType="numeric"
+                        mode="outlined"
+                        style={dynamicStyles.modalInput}
+                    />
+                    
+                    {/* Category ID (Simple text input for demo) */}
+                    <TextInput
+                        label={t('category_id_label')} 
+                        value={newModalFormData.category_id}
+                        onChangeText={(category_id) => setNewModalFormData(p => ({ ...p, category_id }))}
+                        mode="outlined"
+                        style={dynamicStyles.modalInput}
+                    />
+
+                    {/* Description */}
+                    <TextInput
+                        label={t('description_optional')}
+                        value={newModalFormData.description}
+                        onChangeText={(description) => setNewModalFormData(p => ({ ...p, description }))}
+                        mode="outlined"
+                        multiline
+                        numberOfLines={3}
+                        style={dynamicStyles.modalInput}
+                    />
+
+                    {/* Removed Veg/Non-Veg Switch */}
+
+                    <View style={dynamicStyles.modalActions}>
+                        <Button onPress={closeAddModal} mode="outlined" disabled={isSubmitting}>
+                            {t('cancel')}
+                        </Button>
+                        <Button
+                            onPress={handleAddSubmit}
+                            mode="contained"
+                            style={dynamicStyles.saveButton}
+                            loading={isSubmitting}
+                            disabled={isSubmitting}
+                        >
+                            {t('add_item')}
+                        </Button>
+                    </View>
+                </Modal>
+            </Portal>
         </SafeAreaView>
     );
 }

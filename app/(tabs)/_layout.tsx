@@ -1,42 +1,47 @@
-// oneQlick/app/(tabs)/_layout.tsx (THEME-AWARE)
+// oneQlick/app/(tabs)/_layout.tsx (FINAL ROBUST VERSION)
 
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useAuth } from '../../hooks/useAuthZustand';
+// NOTE: Assuming this hook correctly manages the user role.
+import { useAuth } from '../../hooks/useAuthZustand'; 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-// 👇 IMPORT THEME CONTEXT
 import { useTheme } from '../../contexts/ThemeContext'; 
 
 export default function TabLayout() {
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
-  // 👇 USE THEME HOOK
   const { theme } = useTheme(); 
 
   const isDark = theme === 'dark';
+  
+  // 🔑 1. Define the current user's role string
   const role = user?.role?.toLowerCase();
 
-  const isRestaurant = role === 'restaurant_owner' || role === 'restaurant';
-  const isDelivery = role === 'delivery_partner' || role === 'delivery';
+  // 🔑 2. Determine the key flag for conditional rendering
+  // This flag is TRUE only if the user is a delivery partner
+  const isDelivery = role === 'delivery_partner' || role === 'delivery'; 
+  
+  // You might also find it helpful to explicitly define the customer/restaurant owner flag
+  const isCustomerOrRestaurant = !isDelivery;
 
   // Define theme colors
+  const ACTIVE_COLOR = isDark ? '#BB86FC' : '#4F46E5'; 
+  const INACTIVE_COLOR = isDark ? '#AAAAAA' : '#6B7280';
   const TAB_BAR_BACKGROUND = isDark ? '#1E1E1E' : 'white';
   const TAB_BORDER_COLOR = isDark ? '#333333' : '#f0f0f0';
-  const ACTIVE_COLOR = isDark ? '#BB86FC' : '#4F46E5'; // Purple for dark, Blue for light
-  const INACTIVE_COLOR = isDark ? '#AAAAAA' : '#6B7280';
+
 
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        // 👇 APPLY DYNAMIC COLORS
         tabBarActiveTintColor: ACTIVE_COLOR,
         tabBarInactiveTintColor: INACTIVE_COLOR,
         
         tabBarStyle: {
-          backgroundColor: TAB_BAR_BACKGROUND, // 🔑 DYNAMIC BACKGROUND
-          borderTopColor: TAB_BORDER_COLOR, // 🔑 DYNAMIC BORDER
+          backgroundColor: TAB_BAR_BACKGROUND,
+          borderTopColor: TAB_BORDER_COLOR,
           elevation: 8,
           height: 75 + insets.bottom,
           paddingBottom: 8 + insets.bottom,
@@ -49,28 +54,28 @@ export default function TabLayout() {
       }}
     >
 
-      {/* Hidden index */}
+      {/* Hidden index - Always hide */}
       <Tabs.Screen name="index" options={{ href: null }} />
 
-      {/* 1 → DELIVERIES */}
-      {isDelivery ? (
-        <Tabs.Screen
-          name="deliveries"
-          options={{
-            title: 'Deliveries',
-            tabBarIcon: ({ color }) => (
-              <MaterialIcons name="delivery-dining" size={26} color={color} />
-            ),
-          }}
-        />
-      ) : (
-        <Tabs.Screen name="deliveries" options={{ href: null }} />
-      )}
+      {/* 1 → DELIVERIES: SHOW ONLY FOR DELIVERY PARTNER */}
+      <Tabs.Screen
+        name="deliveries"
+        options={{
+          // Show if Delivery Partner, hide otherwise
+          href: isDelivery ? 'deliveries' : null, 
+          title: 'Deliveries',
+          tabBarIcon: ({ color }) => (
+            <MaterialIcons name="delivery-dining" size={26} color={color} />
+          ),
+        }}
+      />
 
-      {/* 2 → EARNINGS */}
+      {/* 2 → EARNINGS: SHOW ONLY FOR DELIVERY PARTNER */}
       <Tabs.Screen
         name="earnings"
         options={{
+          // Show if Delivery Partner, hide otherwise
+          href: isDelivery ? 'earnings' : null, 
           title: 'Earnings',
           tabBarIcon: ({ color }) => (
             <MaterialIcons name="attach-money" size={26} color={color} />
@@ -78,10 +83,12 @@ export default function TabLayout() {
         }}
       />
 
-      {/* 3 → ORDERS */}
+      {/* 3 → ORDERS: SHOW FOR RESTAURANT OWNER/CUSTOMER, HIDE FOR DELIVERY PARTNER */}
       <Tabs.Screen
         name="orders"
         options={{
+          // Show if NOT a Delivery Partner, hide otherwise (This includes Restaurant Owners)
+          href: isDelivery ? null : 'orders', 
           title: 'Orders',
           tabBarIcon: ({ color }) => (
             <MaterialIcons name="list-alt" size={26} color={color} />
@@ -89,10 +96,12 @@ export default function TabLayout() {
         }}
       />
 
-      {/* 4 → MENU */}
+      {/* 4 → MENU: SHOW FOR RESTAURANT OWNER/CUSTOMER, HIDE FOR DELIVERY PARTNER */}
       <Tabs.Screen
         name="menu"
         options={{
+          // Show if NOT a Delivery Partner, hide otherwise (This includes Restaurant Owners)
+          href: isDelivery ? null : 'menu', 
           title: 'Menu',
           tabBarIcon: ({ color }) => (
             <MaterialIcons name="restaurant-menu" size={26} color={color} />
@@ -100,10 +109,12 @@ export default function TabLayout() {
         }}
       />
 
-      {/* 5 → ACTIVITY */}
+      {/* 5 → ACTIVITY: SHOW ONLY FOR DELIVERY PARTNER */}
       <Tabs.Screen
         name="activity"
         options={{
+          // Show if Delivery Partner, hide otherwise
+          href: isDelivery ? 'activity' : null, 
           title: 'Activity',
           tabBarIcon: ({ color }) => (
             <MaterialIcons name="dashboard" size={26} color={color} />
@@ -111,7 +122,7 @@ export default function TabLayout() {
         }}
       />
 
-      {/* 6 → PROFILE */}
+      {/* 6 → PROFILE: VISIBLE FOR ALL ROLES */}
       <Tabs.Screen
         name="profile"
         options={{
@@ -122,7 +133,7 @@ export default function TabLayout() {
         }}
       />
 
-      {/* 7 → SETTINGS */}
+      {/* 7 → SETTINGS: VISIBLE FOR ALL ROLES */}
       <Tabs.Screen
         name="settings"
         options={{
