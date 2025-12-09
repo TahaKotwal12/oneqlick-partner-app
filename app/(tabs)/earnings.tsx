@@ -50,6 +50,7 @@ export default function EarningsScreen() {
   const { theme } = useTheme();
   const { t } = useLanguage();
   const { user } = useAuth();
+
   const isDark = theme === 'dark';
 
   const [period, setPeriod] = useState<'today' | 'weekly'>('today');
@@ -72,26 +73,29 @@ export default function EarningsScreen() {
     marginBottom: 16,
   };
 
+  const textPrimary = { color: isDark ? '#ffffff' : '#000000' };
+  const textSecondary = { color: isDark ? '#cccccc' : '#888888' };
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? '#131313' : '#f5f5f5' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? '#121212' : '#f5f5f5' }}>
       
       {/* Header */}
       <View style={{ padding: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Text style={{ fontSize: 24, fontWeight: '700', color: isDark ? '#fff' : '#000' }}>
+        <Text style={{ fontSize: 24, fontWeight: '700', ...textPrimary }}>
           {t('earnings')}
         </Text>
 
         <View style={{ flexDirection: 'row', gap: 20 }}>
           <TouchableOpacity onPress={() => setPeriod('today')}>
             <Text style={{ 
-              color: period === 'today' ? '#4F46E5' : '#888',
+              color: period === 'today' ? '#4F46E5' : textSecondary.color,
               fontWeight: '600'
             }}>{t('today')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity onPress={() => setPeriod('weekly')}>
             <Text style={{ 
-              color: period === 'weekly' ? '#4F46E5' : '#888',
+              color: period === 'weekly' ? '#4F46E5' : textSecondary.color,
               fontWeight: '600'
             }}>{t('this_week')}</Text>
           </TouchableOpacity>
@@ -106,9 +110,9 @@ export default function EarningsScreen() {
         {/* Total Earnings */}
         <Card style={cardStyle}>
           <Card.Content>
-            <Text style={{ fontSize: 14, color: '#888' }}>Total Earnings</Text>
+            <Text style={{ fontSize: 14, ...textSecondary }}>Total Earnings</Text>
             <Text style={{ fontSize: 34, fontWeight: '800', color: '#4F46E5' }}>₹{data.total}</Text>
-            <Text style={{ fontSize: 14, color: '#888' }}>Balance: ₹{data.balance}</Text>
+            <Text style={{ fontSize: 14, ...textSecondary }}>Balance: ₹{data.balance}</Text>
           </Card.Content>
         </Card>
 
@@ -120,8 +124,8 @@ export default function EarningsScreen() {
             backgroundColor: isDark ? '#1b1b1b' : '#fafafa', alignItems: 'center'
           }}>
             <MaterialCommunityIcons name="bike" size={30} color="#4F46E5" />
-            <Text style={{ fontSize: 18, fontWeight: '700' }}>{data.orders}</Text>
-            <Text style={{ fontSize: 12, color: '#888' }}>Orders</Text>
+            <Text style={{ fontSize: 18, fontWeight: '700', ...textPrimary }}>{data.orders}</Text>
+            <Text style={{ fontSize: 12, ...textSecondary }}>Orders</Text>
           </Surface>
 
           <Surface style={{
@@ -129,8 +133,8 @@ export default function EarningsScreen() {
             backgroundColor: isDark ? '#1b1b1b' : '#fafafa', alignItems: 'center'
           }}>
             <MaterialCommunityIcons name="clock-outline" size={30} color="#f97316" />
-            <Text style={{ fontSize: 18, fontWeight: '700' }}>{data.hours}</Text>
-            <Text style={{ fontSize: 12, color: '#888' }}>Login Hrs</Text>
+            <Text style={{ fontSize: 18, fontWeight: '700', ...textPrimary }}>{data.hours}</Text>
+            <Text style={{ fontSize: 12, ...textSecondary }}>Login Hrs</Text>
           </Surface>
 
           <Surface style={{
@@ -138,33 +142,43 @@ export default function EarningsScreen() {
             backgroundColor: isDark ? '#1b1b1b' : '#fafafa', alignItems: 'center'
           }}>
             <MaterialCommunityIcons name="map-marker" size={30} color="#a855f7" />
-            <Text style={{ fontSize: 18, fontWeight: '700' }}>{data.distance}</Text>
-            <Text style={{ fontSize: 12, color: '#888' }}>Distance</Text>
+            <Text style={{ fontSize: 18, fontWeight: '700', ...textPrimary }}>{data.distance}</Text>
+            <Text style={{ fontSize: 12, ...textSecondary }}>Distance</Text>
           </Surface>
 
         </View>
 
-        {/* Earnings Breakdown */}
+        {/* Earnings Breakdown - FIXED DARK MODE */}
         <Card style={cardStyle}>
           <Card.Content>
             {data.breakdown.map((item, index) => (
-              <View key={index} style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
-                <Text>{item.label}</Text>
-                <Text>₹{item.amount}</Text>
+              <View 
+                key={index} 
+                style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}
+              >
+                <Text style={{ color: isDark ? '#e5e5e5' : '#333', fontSize: 15 }}>
+                  {item.label}
+                </Text>
+
+                <Text style={{ color: isDark ? '#ffffff' : '#000', fontWeight: '600', fontSize: 15 }}>
+                  ₹{item.amount}
+                </Text>
               </View>
             ))}
           </Card.Content>
         </Card>
 
         {/* Trips */}
-        <Text style={{ fontSize: 20, fontWeight: '700', marginBottom: 8 }}>Trips & Adjustments</Text>
+        <Text style={{ fontSize: 20, fontWeight: '700', marginBottom: 8, ...textPrimary }}>
+          Trips & Adjustments
+        </Text>
 
         {data.trips.map((trip, index) => (
           <Card key={index} style={cardStyle}>
             <Card.Content style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
               <View>
-                <Text style={{ fontWeight: '700' }}>{trip.restaurant}</Text>
-                <Text style={{ fontSize: 12, color: '#888' }}>{trip.time} • {trip.id}</Text>
+                <Text style={{ fontWeight: '700', ...textPrimary }}>{trip.restaurant}</Text>
+                <Text style={{ fontSize: 12, ...textSecondary }}>{trip.time} • {trip.id}</Text>
               </View>
 
               <Text style={{
