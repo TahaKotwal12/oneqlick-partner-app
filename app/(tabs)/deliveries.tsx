@@ -7,14 +7,13 @@ import {
     TouchableOpacity, 
     Switch, 
     Alert,
-    Text as RNText,
-    Dimensions
+    Text as RNText
 } from 'react-native';
 
 import { useRouter } from 'expo-router'; 
 import AppHeader from '../../components/common/AppHeader'; 
 import { getDeliveryOrders, getProfile } from '../../utils/mock'; 
-import { MaterialIcons, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'; 
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'; 
 import { useTheme } from '../../contexts/ThemeContext'; 
 import { useLanguage } from '../../contexts/LanguageContext';
 
@@ -34,7 +33,10 @@ interface UserProfile { id: string; name: string; is_online: boolean; }
 const StatCard = ({ label, value, icon, color, theme }: any) => (
     <View style={[
         styles.statCard, 
-        { backgroundColor: theme === 'dark' ? '#1E1E1E' : '#FFFFFF', borderColor: theme === 'dark' ? '#333' : '#F0F0F0' }
+        { 
+            backgroundColor: theme === 'dark' ? '#1E1E1E' : '#FFFFFF', 
+            borderColor: theme === 'dark' ? '#333' : '#F0F0F0' 
+        }
     ]}>
         <MaterialCommunityIcons name={icon} size={20} color={color} />
         <RNText style={[styles.statValue, { color: theme === 'dark' ? '#FFF' : '#000' }]}>{value}</RNText>
@@ -95,10 +97,10 @@ const OrderListItem = ({ item, onOpen, theme, t }: { item: DeliveryOrder, onOpen
 
             <View style={[styles.cardFooter, { borderTopColor: theme === 'dark' ? '#333' : '#F5F5F5' }]}>
                 <RNText style={styles.paymentMethod}>{t(item.payment_type.toLowerCase())}</RNText>
-                <TouchableOpacity style={styles.openBtn} onPress={() => onOpen(item.id)}>
+                <View style={styles.openBtn}>
                     <RNText style={styles.openBtnText}>{t('open')}</RNText>
                     <Ionicons name="chevron-forward" size={14} color="#FFF" />
-                </TouchableOpacity>
+                </View>
             </View>
         </TouchableOpacity>
     );
@@ -113,8 +115,9 @@ export default function DeliveryDashboardScreen() {
     const [isOnline, setIsOnline] = useState(true);
 
     useEffect(() => {
-        setProfile(getProfile());
-        setIsOnline(getProfile().is_online);
+        const mockProfile = getProfile();
+        setProfile(mockProfile);
+        setIsOnline(mockProfile.is_online);
         setOrders(getDeliveryOrders());
     }, []);
 
@@ -128,7 +131,6 @@ export default function DeliveryDashboardScreen() {
             <AppHeader title={t("deliveries")} rightAction={{ iconName: 'notifications', onPress: () => router.push('/notifications') }} />
             
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-                {/* Profile & Status Card */}
                 <View style={[styles.profileCard, { backgroundColor: theme === 'dark' ? '#1E1E1E' : '#FFF' }]}>
                     <View style={styles.profileRow}>
                         <View style={styles.avatarContainer}>
@@ -149,25 +151,29 @@ export default function DeliveryDashboardScreen() {
                     </View>
                 </View>
 
-                {/* Stats Grid */}
                 <View style={styles.statsGrid}>
                     <StatCard theme={theme} label="Earnings" value="₹1,240" icon="trending-up" color="#10B981" />
                     <StatCard theme={theme} label="Success" value="100%" icon="shield-check" color="#6366F1" />
                     <StatCard theme={theme} label="Rating" value="4.8" icon="star" color="#F59E0B" />
                 </View>
 
-                {/* Active Requests Header */}
                 <View style={styles.sectionHeader}>
                     <RNText style={styles.sectionTitle}>{t('active_requests').toUpperCase()}</RNText>
                     <View style={styles.countBadge}><RNText style={styles.countText}>{orders.length}</RNText></View>
                 </View>
 
-                {/* Orders List */}
                 <FlatList
                     data={orders}
                     scrollEnabled={false}
                     keyExtractor={(item) => item.id}
-                    renderItem={({ item }) => <OrderListItem item={item} theme={theme} t={t} onOpen={(id) => router.push({ pathname: '/delivery-order-details', params: { orderId: id } })} />}
+                    renderItem={({ item }) => (
+                        <OrderListItem 
+                            item={item} 
+                            theme={theme} 
+                            t={t} 
+                            onOpen={(id) => router.push({ pathname: '/delivery-order-details', params: { orderId: id } })} 
+                        />
+                    )}
                     ListEmptyComponent={<RNText style={styles.emptyText}>{t('no_active_requests')}</RNText>}
                 />
             </ScrollView>
@@ -177,7 +183,7 @@ export default function DeliveryDashboardScreen() {
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
-    scrollContent: { padding: 20, pb: 40 },
+    scrollContent: { padding: 20, paddingBottom: 40 }, // Fixed 'pb' to 'paddingBottom'
     profileCard: { borderRadius: 24, padding: 20, marginBottom: 20, elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10 },
     profileRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
     avatarContainer: { width: 56, height: 56, borderRadius: 18, backgroundColor: '#4F46E5', justifyContent: 'center', alignItems: 'center', marginRight: 15 },
@@ -196,6 +202,12 @@ const styles = StyleSheet.create({
     countText: { color: '#FFF', fontSize: 10, fontWeight: 'bold' },
     card: { borderRadius: 28, padding: 20, marginBottom: 16, borderWidth: 1 },
     cardHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 },
+    
+    // Fixed: Added missing orderIdContainer
+    orderIdContainer: {
+        flex: 1,
+    },
+    
     labelSmall: { fontSize: 9, fontWeight: '800', color: '#AAA', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 2 },
     orderIdText: { fontSize: 16, fontWeight: '900' },
     amountText: { fontSize: 18, fontWeight: '900', color: '#10B981' },
