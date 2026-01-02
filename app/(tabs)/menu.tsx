@@ -17,64 +17,64 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 const DUMMY_MENU_DATA = {
     veg: {
         'North Indian': [
-            { name: 'Paneer Butter Masala', price: '280', description: 'Cottage cheese in rich tomato gravy', category: 'North Indian', image: 'https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=200' },
-            { name: 'Dal Makhani', price: '240', description: 'Black lentils cooked overnight with cream', category: 'North Indian', image: 'https://images.unsplash.com/photo-1585937421612-70a008356f36?w=200' },
-            { name: 'Veg Pulao', price: '180', description: 'Basmati rice with mixed vegetables', category: 'Rice', image: 'https://images.unsplash.com/photo-1645177628172-a94c1f96e6db?w=200' },
-            { name: 'Palak Paneer', price: '260', description: 'Cottage cheese cubes in spinach gravy', category: 'North Indian', image: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=200' },
-            { name: 'Malai Kofta', price: '290', description: 'Fried dumplings in creamy cashew curry', category: 'North Indian', image: 'https://images.unsplash.com/photo-1589647363585-f4a7d3877b10?w=200' }
+            { name: 'Paneer Butter Masala', price: '280', description: 'Cottage cheese in rich tomato gravy', category: 'North Indian', image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR_JfZHtD_jlggLqhDlthd7Jg2o4gt7OrWH7w&s' },
+            { name: 'Dal Makhani', price: '240', description: 'Black lentils cooked overnight with cream', category: 'North Indian', image: 'https://www.pureindianfoods.com/cdn/shop/articles/Dal-Makhani.webp?v=1753479167' },
+            { name: 'Veg Pulao', price: '180', description: 'Basmati rice with mixed vegetables', category: 'Rice', image: 'https://cdn1.foodviva.com/static-content/food-images/rice-recipes/vegetable-pulav-recipe/vegetable-pulav-recipe.jpg' },
+            { name: 'Palak Paneer', price: '260', description: 'Cottage cheese cubes in spinach gravy', category: 'North Indian', image: 'https://www.chefajaychopra.com/assets/img/recipe/1-1666433552palakpaneer1webp.webp' },
+            { name: 'Malai Kofta', price: '290', description: 'Fried dumplings in creamy cashew curry', category: 'North Indian', image: 'https://carveyourcraving.com/wp-content/uploads/2021/09/Best-Malai-Kofta-recipe.jpg' }
         ],
         'South Indian': [
             { name: 'Masala Dosa', price: '120', description: 'Fermented crepe stuffed with potato masala', category: 'South Indian', image: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=200' },
             { name: 'Idli Sambar', price: '80', description: 'Steamed rice cakes with lentil soup', category: 'South Indian', image: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=200' },
-            { name: 'Uttapam', price: '110', description: 'Thick pancake with onion and tomato toppings', category: 'South Indian', image: 'https://images.unsplash.com/photo-1630302720542-f54298158866?w=200' }
+            { name: 'Uttapam', price: '110', description: 'Thick pancake with onion and tomato toppings', category: 'South Indian', image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSW9tmanikEhiMSQxYM8Z_csTGqT_VRXTaKRQ&s' }
         ],
         'Chinese': [
-            { name: 'Veg Hakka Noodles', price: '180', description: 'Stir fried noodles with fresh veggies', category: 'Chinese', image: 'https://images.unsplash.com/photo-1585032226651-759b368d7246?w=200' },
-            { name: 'Veg Manchurian', price: '200', description: 'Fried veg balls in spicy soya sauce', category: 'Chinese', image: 'https://images.unsplash.com/photo-1525755662778-989d0524087e?w=200' },
-            { name: 'Chilli Paneer', price: '220', description: 'Spicy cottage cheese with capsicum', category: 'Chinese', image: 'https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?w=200' }
+            { name: 'Veg Hakka Noodles', price: '180', description: 'Stir fried noodles with fresh veggies', category: 'Chinese', image: 'https://www.whiskaffair.com/wp-content/uploads/2020/10/Veg-Hakka-Noodles-2-3.jpg' },
+            { name: 'Veg Manchurian', price: '200', description: 'Fried veg balls in spicy soya sauce', category: 'Chinese', image: 'https://www.temptingtreat.com/wp-content/uploads/2025/02/manchurian-with-product-p1-2.jpg' },
+            { name: 'Chilli Paneer', price: '220', description: 'Spicy cottage cheese with capsicum', category: 'Chinese', image: 'https://spicecravings.com/wp-content/uploads/2022/01/Chilli-Paneer-Featured-2.jpg' }
         ],
         'Italian': [
-            { name: 'Margherita Pizza', price: '250', description: 'Classic cheese and tomato pizza', category: 'Italian', image: 'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=200' },
-            { name: 'White Sauce Pasta', price: '220', description: 'Penne pasta in creamy cheesy sauce', category: 'Italian', image: 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=200' },
-            { name: 'Farmhouse Pizza', price: '300', description: 'Loaded with onion, capsicum, corn and mushroom', category: 'Italian', image: 'https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?w=200' }
+            { name: 'Margherita Pizza', price: '250', description: 'Classic cheese and tomato pizza', category: 'Italian', image: 'https://www.vindulge.com/wp-content/uploads/2022/05/Margherita-Pizza.jpg' },
+            { name: 'White Sauce Pasta', price: '220', description: 'Penne pasta in creamy cheesy sauce', category: 'Italian', image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcShJfb84jTT1S20AWnMLWvUrmc_ZGPsbv5afw&s' },
+            { name: 'Farmhouse Pizza', price: '300', description: 'Loaded with onion, capsicum, corn and mushroom', category: 'Italian', image: 'https://media-assets.swiggy.com/swiggy/image/upload/f_auto,q_auto,fl_lossy/f9701b4e9e6aae4febe5e52c9f5e36f9' }
         ],
         'Starters': [
-            { name: 'Paneer Tikka', price: '220', description: 'Grilled spiced cottage cheese chunks', category: 'Starters', image: 'https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?w=200' },
-            { name: 'Hara Bhara Kebab', price: '180', description: 'Spiced patties made of spinach and peas', category: 'Starters', image: 'https://images.unsplash.com/photo-1601050690117-94f5f6fa8bd7?w=200' }
+            { name: 'Paneer Tikka', price: '220', description: 'Grilled spiced cottage cheese chunks', category: 'Starters', image: 'https://lentillovingfamily.com/wp-content/uploads/2025/08/paneer-tikka-2.jpg' },
+            { name: 'Hara Bhara Kebab', price: '180', description: 'Spiced patties made of spinach and peas', category: 'Starters', image: 'https://www.vegrecipesofindia.com/wp-content/uploads/2013/01/hara-bhara-kabab-recipe-1-500x500.jpg' }
         ],
         'Desserts': [
-            { name: 'Gulab Jamun', price: '80', description: 'Fried milk solids soaked in sugar syrup', category: 'Desserts', image: 'https://images.unsplash.com/photo-1589119908995-c6837fa14848?w=200' },
-            { name: 'Rasmalai', price: '100', description: 'Cottage cheese balls in thickened milk', category: 'Desserts', image: 'https://images.unsplash.com/photo-1610427958994-3d922906b72a?w=200' }
+            { name: 'Gulab Jamun', price: '80', description: 'Fried milk solids soaked in sugar syrup', category: 'Desserts', image: 'https://i0.wp.com/www.chitrasfoodbook.com/wp-content/uploads/2016/10/gulab-jamun-using-mix.jpg?w=1200&ssl=1' },
+            { name: 'Rasmalai', price: '100', description: 'Cottage cheese balls in thickened milk', category: 'Desserts', image: 'https://palatesdesire.com/wp-content/uploads/2022/09/Rasmalai-recipe@palates-desire.jpg' }
         ],
         'Beverages': [
-            { name: 'Sweet Lassi', price: '60', description: 'Traditional yogurt drink', category: 'Beverages', image: 'https://images.unsplash.com/photo-1626132647523-66f5bf380027?w=200' },
-            { name: 'Mango Shake', price: '90', description: 'Fresh mango blended with milk', category: 'Beverages', image: 'https://images.unsplash.com/photo-1546171753-97d7676e4602?w=200' }
+            { name: 'Sweet Lassi', price: '60', description: 'Traditional yogurt drink', category: 'Beverages', image: 'https://shwetainthekitchen.com/wp-content/uploads/2021/05/Sweet-lassi.jpg' },
+            { name: 'Mango Shake', price: '90', description: 'Fresh mango blended with milk', category: 'Beverages', image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTJjT7cbdKqsDepmmVNRtCnxozaB00TqaUm7Q&s' }
         ]
     },
     nonveg: {
         'North Indian': [
-            { name: 'Chicken Curry', price: '300', description: 'Chicken cooked in home style gravy', category: 'North Indian', image: 'https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?w=200' },
-            { name: 'Mutton Rogan Josh', price: '450', description: 'Aromatic lamb curry from Kashmir', category: 'North Indian', image: 'https://images.unsplash.com/photo-1585937421612-70a008356f36?w=200' }
+            { name: 'Chicken Curry', price: '300', description: 'Chicken cooked in home style gravy', category: 'North Indian', image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTSRE6HXKNaIL-MGPXmIMJ5LggXy6_fEXF_Dw&s' },
+            { name: 'Mutton Rogan Josh', price: '450', description: 'Aromatic lamb curry from Kashmir', category: 'North Indian', image: 'https://static.toiimg.com/thumb/53192600.cms?imgsize=418831&width=800&height=800' }
         ],
         'Mughlai': [
-            { name: 'Chicken Biryani', price: '350', description: 'Aromatic rice layered with spiced chicken', category: 'Biryani', image: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=200' },
-            { name: 'Butter Chicken', price: '320', description: 'Chicken in creamy tomato curry', category: 'Main Course', image: 'https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?w=200' },
-            { name: 'Mutton Biryani', price: '400', description: 'Spiced rice with tender mutton pieces', category: 'Biryani', image: 'https://images.unsplash.com/photo-1633945274405-b6c8069047b0?w=200' }
+            { name: 'Chicken Biryani', price: '350', description: 'Aromatic rice layered with spiced chicken', category: 'Biryani', image: 'https://ministryofcurry.com/wp-content/uploads/2024/06/chicken-biryani-5.jpg' },
+            { name: 'Butter Chicken', price: '320', description: 'Chicken in creamy tomato curry', category: 'Main Course', image: 'https://www.indianhealthyrecipes.com/wp-content/uploads/2023/04/butter-chicken-recipe.jpg' },
+            { name: 'Mutton Biryani', price: '400', description: 'Spiced rice with tender mutton pieces', category: 'Biryani', image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRDdi19ANtwkkDvVsAC-yiALAtFermChxjmdA&s' }
         ],
         'Chinese': [
-            { name: 'Chicken Fried Rice', price: '250', description: 'Wok tossed rice with chicken and egg', category: 'Chinese', image: 'https://images.unsplash.com/photo-1603133872878-684f10842619?w=200' },
-            { name: 'Chilli Chicken', price: '280', description: 'Batter fried chicken in spicy sauce', category: 'Chinese', image: 'https://images.unsplash.com/photo-1525755662778-989d0524087e?w=200' },
-            { name: 'Chicken Hakka Noodles', price: '240', description: 'Noodles stir fried with chicken strips', category: 'Chinese', image: 'https://images.unsplash.com/photo-1552611052-33e04de081de?w=200' }
+            { name: 'Chicken Fried Rice', price: '250', description: 'Wok tossed rice with chicken and egg', category: 'Chinese', image: 'https://nishkitchen.com/wp-content/uploads/2015/11/Indo-Chinese-Chicken-Fried-Rice-2B.jpg' },
+            { name: 'Chilli Chicken', price: '280', description: 'Batter fried chicken in spicy sauce', category: 'Chinese', image: 'https://pupswithchopsticks.com/wp-content/uploads/chilli-chicken-thumbnail.jpg' },
+            { name: 'Chicken Hakka Noodles', price: '240', description: 'Noodles stir fried with chicken strips', category: 'Chinese', image: 'https://www.cubesnjuliennes.com/wp-content/uploads/2020/06/Spicy-Chicken-Hakka-Noodles-Recipe.jpg' }
         ],
         'Italian': [
-            { name: 'Pepperoni Pizza', price: '350', description: 'Classic pizza with pepperoni slices', category: 'Italian', image: 'https://images.unsplash.com/photo-1628840042765-356cda07504e?w=200' },
-            { name: 'Chicken Pasta', price: '280', description: 'Pasta with grilled chicken in red sauce', category: 'Italian', image: 'https://images.unsplash.com/photo-1608219992759-8d74ed8d76eb?w=200' },
-            { name: 'BBQ Chicken Pizza', price: '380', description: 'Pizza topped with bbq chicken and onions', category: 'Italian', image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=200' }
+            { name: 'Pepperoni Pizza', price: '350', description: 'Classic pizza with pepperoni slices', category: 'Italian', image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQoYWUM5Lpw8wwHe5aK6e9R4o1OOwI4XRsPLg&s' },
+            { name: 'Chicken Pasta', price: '280', description: 'Pasta with grilled chicken in red sauce', category: 'Italian', image: 'https://dishingouthealth.com/wp-content/uploads/2025/02/CreamyLemonChickenPasta_Square-1.jpg' },
+            { name: 'BBQ Chicken Pizza', price: '380', description: 'Pizza topped with bbq chicken and onions', category: 'Italian', image: 'https://damndelicious.net/wp-content/uploads/2021/10/BBQ-Chicken-PizzaIMG_0027edit.jpg' }
         ],
         'Starters': [
-            { name: 'Chicken Tikka', price: '280', description: 'Roasted marinated chicken chunks', category: 'Starters', image: 'https://images.unsplash.com/photo-1599487488170-d11ec9c172f0?w=200' },
-            { name: 'Fish Fry', price: '320', description: 'Crispy fried fish fillets', category: 'Starters', image: 'https://images.unsplash.com/photo-1594756202469-9ff9799b2e4e?w=200' },
-            { name: 'Chicken Wings', price: '250', description: 'Spicy buffalo style chicken wings', category: 'Starters', image: 'https://images.unsplash.com/photo-1567620832903-9fc6debc209f?w=200' }
+            { name: 'Chicken Tikka', price: '280', description: 'Roasted marinated chicken chunks', category: 'Starters', image: 'https://foodfoodonlyfood.wordpress.com/wp-content/uploads/2017/02/img_20240519_155506.jpg' },
+            { name: 'Fish Fry', price: '320', description: 'Crispy fried fish fillets', category: 'Starters', image: 'https://www.thetakeiteasychef.com/wp-content/uploads/2017/12/KFF-FI1-Compressed.jpg' },
+            { name: 'Chicken Wings', price: '250', description: 'Spicy buffalo style chicken wings', category: 'Starters', image: 'https://www.thecookierookie.com/wp-content/uploads/2024/02/bbq-chicken-wings-recipe-featured-image.jpg' }
         ]
     }
 };
@@ -318,11 +318,15 @@ export default function MenuScreen() {
             if (response.success) {
                 Alert.alert(t('success'), t('item_added_successfully'));
                 
-                // --- FIX: LOCAL UPDATE ONLY ---
-                // Instead of calling fetchMenu(), we manually add the item to the list.
-                // This prevents deleted items (that weren't deleted on server) from reappearing.
+                // --- FIX: LOCAL UPDATE & UNIQUE KEY GENERATION ---
+                // We create a unique ID by combining the response ID (or random) with a timestamp
+                // to prevent the "same key" error if the API returns duplicate IDs.
+                const uniqueId = response.data?.food_item_id 
+                    ? `${response.data.food_item_id}_${Date.now()}` 
+                    : Date.now().toString();
+
                 const createdItem: ExtendedFoodItem = {
-                    food_item_id: response.data?.food_item_id || Math.random().toString(), // Fallback ID if API doesn't return one
+                    food_item_id: uniqueId, 
                     restaurant_id: 'current_user',
                     name: newName,
                     price: newPrice,
