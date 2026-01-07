@@ -1,13 +1,14 @@
-// oneQlick/app/(tabs)/profile.tsx (I18N + THEME FIXED)
+// oneQlick/app/(tabs)/profile.tsx (REAL DATA VERSION)
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, Alert, Switch, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import AppHeader from '../../components/common/AppHeader';
 import { MaterialIcons } from '@expo/vector-icons';
-import { getProfile } from '../../utils/mock';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useAuth } from '../../hooks/useAuthZustand';
+import { useRestaurantProfileStore } from '../../store/restaurantProfileStore';
 
 // *** Interfaces ***
 interface UserProfile {
@@ -44,23 +45,53 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { theme } = useTheme();
   const { t } = useLanguage();
+  const { user, logout: authLogout } = useAuth();
+  const { profile: restaurantProfile, fetchProfile } = useRestaurantProfileStore();
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isOnline, setIsOnline] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Load Profile
+  // Load Profile from real user data
   useEffect(() => {
-    try {
-      const mockProfile: UserProfile = getProfile();
-      setProfile(mockProfile);
-      setIsOnline(mockProfile.is_online);
-    } catch (err) {
-      console.error("Error loading profile:", err);
-    } finally {
+    console.log('ProfileScreen (tabs) - User:', user);
+    console.log('ProfileScreen (tabs) - Restaurant Profile:', restaurantProfile);
+
+    if (!user) {
       setLoading(false);
+      return;
     }
-  }, []);
+
+    // Fetch restaurant profile if restaurant owner
+    if (user.role === 'restaurant_owner' && !restaurantProfile) {
+      console.log('ProfileScreen (tabs) - Fetching restaurant profile...');
+      fetchProfile().catch((error) => {
+        console.log('ProfileScreen (tabs) - Error fetching profile:', error);
+        // If 404, redirect to onboarding
+        if (error.message && error.message.includes('Not Found')) {
+          console.log('ProfileScreen (tabs) - No restaurant found, redirecting to onboarding...');
+          router.replace('/restaurant/onboarding');
+          return;
+        }
+      });
+    }
+
+    // Build profile from user data
+    const userName = user.first_name && user.last_name
+      ? `${user.first_name} ${user.last_name}`
+      : restaurantProfile?.name || user.email || 'User';
+
+    setProfile({
+      name: restaurantProfile?.name || userName,
+      role: user.role || 'user',
+      earnings_today: 0, // TODO: Get from API
+      trips_today: 0, // TODO: Get from API
+      is_online: restaurantProfile?.is_open || false,
+    });
+
+    setIsOnline(restaurantProfile?.is_open || false);
+    setLoading(false);
+  }, [user, restaurantProfile]);
 
   // Toggle Online Status
   const toggleAvailability = useCallback(() => {
@@ -73,8 +104,7 @@ export default function ProfileScreen() {
 
     Alert.alert(
       t("status_updated"),
-      `${t("you_are_now_set_to")} ${
-        newStatus ? t("online").toUpperCase() : t("offline").toUpperCase()
+      `${t("you_are_now_set_to")} ${newStatus ? t("online").toUpperCase() : t("offline").toUpperCase()
       }.`
     );
   }, [isOnline, profile, t]);
@@ -261,25 +291,66 @@ export default function ProfileScreen() {
         </Text>
 
         <View style={dynamicStyles.metricsRow}>
-          <MetricCard
-            title={t("earnings")}
-            value={`₹${profile.earnings_today.toFixed(2)}`}
-            icon="attach-money"
-            color="#4CAF50"
-            styleSet={dynamicStyles}
-          />
+          {profile.role === 'restaurant_owner' ? (
+            // Restaurant Owner Metrics
+            <>
+              <MetricCard
+                title={t("orders_today") || "Orders Today"}
+                value={profile.trips_today.toString()}
+                icon="receipt"
+                color="#FF6B35"
+                styleSet={dynamicStyles}
+              />
 
-          <MetricCard
-            title={t("total_trips")}
-            value={profile.trips_today.toString()}
-            icon="directions-bike"
-            color="#2196F3"
-            styleSet={dynamicStyles}
-          />
+              <MetricCard
+                title={t("revenue") || "Revenue"}
+                value={`₹${profile.earnings_today.toFixed(2)}`}
+                icon="attach-money"
+                color="#4CAF50"
+                styleSet={dynamicStyles}
+              />
+            </>
+          ) : (
+            // Delivery Partner Metrics
+            <>
+              <MetricCard
+                title={t("earnings")}
+                value={`₹${profile.earnings_today.toFixed(2)}`}
+                icon="attach-money"
+                color="#4CAF50"
+                styleSet={dynamicStyles}
+              />
+
+              <MetricCard
+                title={t("total_trips")}
+                value={profile.trips_today.toString()}
+                icon="directions-bike"
+                color="#2196F3"
+                styleSet={dynamicStyles}
+              />
+            </>
+          )}
         </View>
 
         {/* Links */}
         <View style={{ marginTop: 20 }}>
+          {/* Restaurant Settings - Only for Restaurant Owners */}
+          {profile.role === 'restaurant_owner' && (
+            <TouchableOpacity
+              style={dynamicStyles.linkItem}
+              onPress={() => router.push('/restaurant/settings')}
+            >
+              <MaterialIcons name="restaurant" size={24} color="#FF6B35" />
+              <Text style={dynamicStyles.linkText}>{t("restaurant_settings") || "Restaurant Settings"}</Text>
+              <MaterialIcons
+                name="chevron-right"
+                size={24}
+                color={theme === "dark" ? "#444" : "#ccc"}
+              />
+            </TouchableOpacity>
+          )}
+
+          {/* Logout */}
           <TouchableOpacity
             style={dynamicStyles.linkItem}
             onPress={() =>
@@ -288,7 +359,15 @@ export default function ProfileScreen() {
                 {
                   text: t("log_out"),
                   style: "destructive",
-                  onPress: () => console.log("User logged out"),
+                  onPress: async () => {
+                    try {
+                      await authLogout();
+                      router.replace('/(auth)/login');
+                    } catch (error) {
+                      console.error('Logout error:', error);
+                      Alert.alert('Error', 'Failed to logout');
+                    }
+                  },
                 },
               ])
             }

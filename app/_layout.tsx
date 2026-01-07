@@ -11,7 +11,7 @@ import { LanguageProvider } from '../contexts/LanguageContext';
 // Helper component to apply theme-based styling
 function RootLayoutContent() {
   const { theme } = useTheme();
-  
+
   // Define background color based on theme
   const backgroundColor = theme === 'dark' ? '#121212' : '#FFFFFF';
   // Define status bar style based on theme
@@ -26,6 +26,7 @@ function RootLayoutContent() {
             <Stack.Screen name="(auth)" options={{ headerShown: false }} />
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="profile" options={{ headerShown: false }} />
+            <Stack.Screen name="restaurant" options={{ headerShown: false }} />
             <Stack.Screen name="notifications" options={{ headerShown: false }} />
           </Stack>
           <StatusBar style={statusBarStyle} />

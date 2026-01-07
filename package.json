@@ -11,6 +11,7 @@
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",
     "@expo/vector-icons": "^15.0.2",
+    "@googlemaps/react-native-navigation-sdk": "^0.12.1",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-community/datetimepicker": "8.4.4",
     "@react-native-community/geolocation": "3.1.0",
@@ -24,7 +25,7 @@
     "expo-image-picker": "~17.0.8",
     "expo-linear-gradient": "~15.0.7",
     "expo-linking": "~8.0.8",
-    "expo-location": "~19.0.7",
+    "expo-location": "~19.0.8",
     "expo-router": "~6.0.9",
     "expo-speech": "~14.0.7",
     "expo-status-bar": "~3.0.8",

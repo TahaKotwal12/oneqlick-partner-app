@@ -19,6 +19,7 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
+import { useRestaurantProfileStore } from '../../store/restaurantProfileStore';
 import {
   userProfile,
   profileSections,
@@ -27,10 +28,32 @@ import {
 export default function ProfileScreen() {
   const router = useRouter();
   const { logout, user, isLoading } = useAuthStore();
+  const { profile: restaurantProfile, fetchProfile, isLoading: profileLoading, error: profileError } = useRestaurantProfileStore();
 
   // State management
   const [locationServices, setLocationServices] = useState(true);
   const [appNotifications, setAppNotifications] = useState(false);
+
+  // Fetch restaurant profile if user is restaurant owner
+  useEffect(() => {
+    console.log('ProfileScreen - User:', user);
+    console.log('ProfileScreen - User Role:', user?.role);
+    console.log('ProfileScreen - Restaurant Profile:', restaurantProfile);
+
+    if (user?.role === 'restaurant_owner') {
+      console.log('ProfileScreen - Fetching restaurant profile...');
+      fetchProfile().then(() => {
+        console.log('ProfileScreen - Profile fetched successfully');
+      }).catch((err) => {
+        console.error('ProfileScreen - Error fetching profile:', err);
+      });
+    }
+  }, [user?.role]);
+
+  // Log when restaurant profile changes
+  useEffect(() => {
+    console.log('ProfileScreen - Restaurant Profile Updated:', restaurantProfile);
+  }, [restaurantProfile]);
 
   // Handle back button press
   useEffect(() => {
@@ -120,11 +143,44 @@ export default function ProfileScreen() {
   };
 
   const renderProfileHeader = () => {
-    // Use actual user data or fallback to static data
-    const displayUser = user || userProfile;
-    const userName = 'first_name' in displayUser && 'last_name' in displayUser && displayUser.first_name && displayUser.last_name
-      ? `${displayUser.first_name} ${displayUser.last_name}`
-      : 'name' in displayUser ? displayUser.name : 'User';
+    // For restaurant owners, show restaurant name if available
+    if (user?.role === 'restaurant_owner' && restaurantProfile) {
+      const restaurantName = restaurantProfile.name;
+      const restaurantInitial = restaurantName.charAt(0).toUpperCase();
+
+      return (
+        <View style={styles.profileHeader}>
+          <View style={styles.userInfo}>
+            {/* Restaurant Avatar */}
+            <View style={styles.userAvatar}>
+              <Text style={styles.userInitial}>{restaurantInitial}</Text>
+            </View>
+
+            {/* Restaurant Details */}
+            <View style={styles.userDetails}>
+              <Text style={styles.userName}>{restaurantName}</Text>
+              <Text style={styles.userEmail}>{restaurantProfile.email}</Text>
+              <Text style={styles.userPhone}>{restaurantProfile.phone}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                <MaterialIcons name="star" size={16} color="#FFA500" />
+                <Text style={{ fontSize: 14, color: '#6B7280', marginLeft: 4 }}>
+                  {restaurantProfile.rating?.toFixed(1)} ({restaurantProfile.total_ratings} reviews)
+                </Text>
+              </View>
+            </View>
+          </View>
+        </View>
+      );
+    }
+
+    // For other users or if restaurant profile not loaded, show user data
+    if (!user) {
+      return null; // Don't show anything if no user
+    }
+
+    const userName = user.first_name && user.last_name
+      ? `${user.first_name} ${user.last_name}`
+      : user.email || 'User';
 
     // Get first letter of user's name for avatar
     const userInitial = userName.charAt(0).toUpperCase();
@@ -141,8 +197,8 @@ export default function ProfileScreen() {
           {/* User Details */}
           <View style={styles.userDetails}>
             <Text style={styles.userName}>{userName}</Text>
-            <Text style={styles.userEmail}>{displayUser.email || 'No email'}</Text>
-            <Text style={styles.userPhone}>{displayUser.phone || 'No phone'}</Text>
+            <Text style={styles.userEmail}>{user.email || 'No email'}</Text>
+            <Text style={styles.userPhone}>{user.phone || 'No phone'}</Text>
           </View>
         </View>
       </View>
@@ -259,6 +315,32 @@ export default function ProfileScreen() {
           {/* Settings Section */}
           <View style={styles.sectionGroup}>
             <Text style={styles.sectionGroupTitle}>Settings</Text>
+
+            {/* Restaurant Settings - Only for restaurant owners */}
+            {user?.role === 'restaurant_owner' && (
+              <Pressable
+                style={styles.sectionItem}
+                onPress={() => router.push('/restaurant/settings')}
+              >
+                <Surface style={styles.sectionSurface}>
+                  <View style={styles.sectionHeader}>
+                    <View style={styles.sectionIcon}>
+                      <MaterialIcons name="restaurant" size={24} color="#6B7280" />
+                    </View>
+
+                    <View style={styles.sectionContent}>
+                      <Text style={styles.sectionTitle}>Restaurant Settings</Text>
+                      <Text style={styles.sectionSubtitle}>Manage your restaurant profile</Text>
+                    </View>
+
+                    <View style={styles.sectionActions}>
+                      <MaterialIcons name="chevron-right" size={24} color="#D1D5DB" />
+                    </View>
+                  </View>
+                </Surface>
+              </Pressable>
+            )}
+
             {profileSections
               .filter(section => ['location-services'].includes(section.id))
               .map(renderProfileSection)}

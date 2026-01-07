@@ -1,243 +1,536 @@
 import { ApiResponse, Order, FoodItem } from '../types';
+import { apiClient } from '../api/client';
 
-// Utility to generate a unique ID for mock purposes
-const generateMockId = (prefix: string) => `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-
-// Mock Data
-const MOCK_ORDERS: Order[] = [
-    {
-        order_id: 'ord-001',
-        order_number: 'ORD-1001',
-        customer_id: 'cust-001',
-        restaurant_id: 'rest-001',
-        total_amount: 45.50,
-        order_status: 'pending',
-        created_at: new Date().toISOString(),
-        items: [
-            { food_item_id: 'food-1', quantity: 2, name: 'Butter Chicken', price: 15.00 },
-            { food_item_id: 'food-2', quantity: 1, name: 'Naan', price: 3.50 }
-        ] as any,
-        payment_status: 'paid',
-        delivery_address: '123 Main St, City'
-    },
-    {
-        order_id: 'ord-002',
-        order_number: 'ORD-1002',
-        customer_id: 'cust-002',
-        restaurant_id: 'rest-001',
-        total_amount: 22.00,
-        order_status: 'preparing',
-        created_at: new Date(Date.now() - 1800000).toISOString(), // 30 mins ago
-        items: [
-            { food_item_id: 'food-3', quantity: 1, name: 'Veg Biryani', price: 12.00 }
-        ] as any,
-        payment_status: 'paid',
-        delivery_address: '456 Park Ave, City'
-    },
-    {
-        order_id: 'ord-003',
-        order_number: 'ORD-1003',
-        customer_id: 'cust-003',
-        restaurant_id: 'rest-001',
-        total_amount: 35.00,
-        order_status: 'ready',
-        created_at: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
-        items: [
-            { food_item_id: 'food-1', quantity: 1, name: 'Butter Chicken', price: 15.00 }
-        ] as any,
-        payment_status: 'paid',
-        delivery_address: '789 Road, City'
-    }
-];
-
-const MOCK_MENU: FoodItem[] = [
-    {
-        food_item_id: 'food-1',
-        restaurant_id: 'rest-001',
-        name: 'Butter Chicken',
-        description: 'Rich and creamy chicken curry',
-        price: 15.00,
-        is_veg: false,
-        category_id: 'Main Course',
-        image: 'https://via.placeholder.com/150',
-        is_available: true,
-        rating: 4.5,
-        total_ratings: 100
-    },
-    {
-        food_item_id: 'food-2',
-        restaurant_id: 'rest-001',
-        name: 'Garlic Naan',
-        description: 'Oven baked flatbread with garlic',
-        price: 3.50,
-        is_veg: true,
-        category_id: 'Breads',
-        image: 'https://via.placeholder.com/150',
-        is_available: true,
-        rating: 4.8,
-        total_ratings: 200
-    },
-    {
-        food_item_id: 'food-3',
-        restaurant_id: 'rest-001',
-        name: 'Veg Biryani',
-        description: 'Aromatic rice dish with vegetables',
-        price: 12.00,
-        is_veg: true,
-        category_id: 'Main Course',
-        image: 'https://via.placeholder.com/150',
-        is_available: false,
-        rating: 4.2,
-        total_ratings: 50
-    }
-];
-
-const MOCK_DELIVERY_REQUESTS: Order[] = [
-    {
-        order_id: 'ord-004',
-        order_number: 'ORD-1004',
-        customer_id: 'cust-004',
-        restaurant_id: 'rest-002',
-        restaurant_name: 'Pizza Paradise',
-        restaurant_address: '101 Food Court, Mall Plaza',
-        total_amount: 55.00,
-        order_status: 'ready',
-        created_at: new Date().toISOString(),
-        items: [{ name: 'Pizza', quantity: 2 }] as any,
-        payment_status: 'paid',
-        delivery_address: '101 Tower, City'
-    }
-];
+// ============================================================================
+// RESTAURANT OWNER APIs
+// ============================================================================
 
 export const partnerAPI = {
-    restaurant: {
-        getOrders: async (status?: string): Promise<ApiResponse<Order[]>> => {
-            await new Promise(resolve => setTimeout(resolve, 800));
-            let filtered = MOCK_ORDERS;
-            if (status) {
-                filtered = MOCK_ORDERS.filter(o => o.order_status === status);
-            }
-            return { success: true, data: filtered, statusCode: 200 };
-        },
+    restaurant: {
+        /**
+         * Get all orders for restaurant owner
+         */
+        getOrders: async (status?: string): Promise<ApiResponse<Order[]>> => {
+            try {
+                const endpoint = status
+                    ? `/partner/restaurant/orders?status=${status}`
+                    : '/partner/restaurant/orders';
 
-        updateOrderStatus: async (orderId: string, status: string): Promise<ApiResponse<Order>> => {
-            await new Promise(resolve => setTimeout(resolve, 800));
-            const order = MOCK_ORDERS.find(o => o.order_id === orderId);
-            if (order) {
-                order.order_status = status as any;
-                return { success: true, data: { ...order }, statusCode: 200 };
-            }
-            return { success: false, error: 'Order not found', statusCode: 404 };
-        },
+                const response = await apiClient.get<{
+                    orders: Order[];
+                    total_count: number;
+                    has_more: boolean;
+                }>(endpoint, true);
 
-        getMenu: async (): Promise<ApiResponse<FoodItem[]>> => {
-            await new Promise(resolve => setTimeout(resolve, 800));
-            return { success: true, data: MOCK_MENU, statusCode: 200 };
-        },
+                if (response.success && response.data) {
+                    return {
+                        success: true,
+                        data: response.data.orders,
+                        statusCode: 200,
+                    };
+                }
 
-        updateMenuItemStatus: async (itemId: string, isAvailable: boolean): Promise<ApiResponse<FoodItem>> => {
-            await new Promise(resolve => setTimeout(resolve, 500));
-            const item = MOCK_MENU.find(i => i.food_item_id === itemId);
-            if (item) {
-                item.is_available = isAvailable;
-                return { success: true, data: { ...item }, statusCode: 200 };
-            }
-            return { success: false, error: 'Item not found', statusCode: 404 };
-        },
-
-        // 🔑 NEW: Implementation for createMenuItem to resolve the error and add mock data
-        createMenuItem: async (itemData: Omit<FoodItem, 'food_item_id' | 'restaurant_id' | 'image' | 'rating' | 'total_ratings' | 'is_veg'>): Promise<ApiResponse<FoodItem>> => {
-            await new Promise(resolve => setTimeout(resolve, 800));
-            
-            // 1. Validate required fields (since your UI only sends name, price, description, category_id)
-            if (!itemData.name || !itemData.price || !itemData.category_id) {
-                return { success: false, error: 'Missing required item details.', statusCode: 400 };
+                return {
+                    success: false,
+                    error: response.error || 'Failed to fetch orders',
+                    statusCode: response.statusCode || 400,
+                };
+            } catch (error) {
+                console.error('Get orders error:', error);
+                return {
+                    success: false,
+                    error: error instanceof Error ? error.message : 'Failed to fetch orders',
+                    statusCode: 500,
+                };
             }
-
-            // 2. Create the new mock FoodItem object
-            const newItem: FoodItem = {
-                // Generate a unique ID for the new item
-                food_item_id: generateMockId('food'), 
-                // Set default/mock values for properties not collected in the modal
-                restaurant_id: 'rest-001', 
-                image: 'https://via.placeholder.com/150',
-                is_available: true, // Default to available
-                is_veg: false, // Defaulting to non-veg since the toggle was removed
-                rating: 0,
-                total_ratings: 0,
-                
-                // Spread the data received from the UI
-                ...itemData, 
-                // Ensure price is a number, although it should be passed as one by the UI after parseFloat
-                price: Number(itemData.price), 
-            };
-
-            // 3. Add the new item to the MOCK_MENU array
-            MOCK_MENU.push(newItem);
-            
-            // 4. Return success response
-            return { success: true, data: newItem, statusCode: 201 };
         },
 
-        getEarnings: async (period: string): Promise<ApiResponse<any>> => {
-            await new Promise(resolve => setTimeout(resolve, 800));
-            return {
-                success: true,
-                data: {
-                    total_amount: 1250.50,
-                    total_orders: 45,
-                    tips: 120.00,
-                    bonus: 50.00
-                },
-                statusCode: 200
-            };
-        },
-    },
+        /**
+         * Get specific order details
+         */
+        getOrderDetails: async (orderId: string): Promise<ApiResponse<Order>> => {
+            try {
+                const response = await apiClient.get<Order>(
+                    `/partner/restaurant/orders/${orderId}`,
+                    true
+                );
 
-    delivery: {
-        getRequests: async (): Promise<ApiResponse<Order[]>> => {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            return { success: true, data: MOCK_DELIVERY_REQUESTS, statusCode: 200 };
-        },
+                if (response.success && response.data) {
+                    return {
+                        success: true,
+                        data: response.data,
+                        statusCode: 200,
+                    };
+                }
 
-        acceptRequest: async (orderId: string): Promise<ApiResponse<Order>> => {
-            await new Promise(resolve => setTimeout(resolve, 800));
-            const order = MOCK_DELIVERY_REQUESTS.find(o => o.order_id === orderId);
-            if (order) {
-                return { success: true, data: { ...order, order_status: 'preparing' }, statusCode: 200 };
-            }
-            return { success: false, error: 'Request expired', statusCode: 404 };
-        },
+                return {
+                    success: false,
+                    error: response.error || 'Failed to fetch order details',
+                    statusCode: response.statusCode || 404,
+                };
+            } catch (error) {
+                return {
+                    success: false,
+                    error: error instanceof Error ? error.message : 'Failed to fetch order details',
+                    statusCode: 500,
+                };
+            }
+        },
 
-        updateDeliveryStatus: async (orderId: string, status: string): Promise<ApiResponse<Order>> => {
-            await new Promise(resolve => setTimeout(resolve, 800));
-            return {
-                success: true,
-                data: {
-                    ...MOCK_DELIVERY_REQUESTS[0],
-                    order_status: status as any
-                },
-                statusCode: 200
-            };
-        },
+        /**
+         * Update order status
+         */
+        updateOrderStatus: async (orderId: string, status: string): Promise<ApiResponse<Order>> => {
+            try {
+                const response = await apiClient.put<Order>(
+                    `/partner/restaurant/orders/${orderId}/status`,
+                    { status },
+                    true
+                );
 
-        toggleAvailability: async (isOnline: boolean): Promise<ApiResponse<{ is_online: boolean }>> => {
-            await new Promise(resolve => setTimeout(resolve, 500));
-            return { success: true, data: { is_online: isOnline }, statusCode: 200 };
-        },
+                if (response.success && response.data) {
+                    return {
+                        success: true,
+                        data: response.data,
+                        statusCode: 200,
+                    };
+                }
 
-        getEarnings: async (period: string): Promise<ApiResponse<any>> => {
-            await new Promise(resolve => setTimeout(resolve, 800));
-            return {
-                success: true,
-                data: {
-                    total_amount: 450.00,
-                    total_orders: 12,
-                    tips: 45.00,
-                    bonus: 20.00
-                },
-                statusCode: 200
-            };
-        },
-    },
+                return {
+                    success: false,
+                    error: response.error || 'Failed to update order status',
+                    statusCode: response.statusCode || 400,
+                };
+            } catch (error) {
+                return {
+                    success: false,
+                    error: error instanceof Error ? error.message : 'Failed to update order status',
+                    statusCode: 500,
+                };
+            }
+        },
+
+        /**
+         * Get restaurant statistics
+         */
+        getStats: async (): Promise<ApiResponse<any>> => {
+            try {
+                const response = await apiClient.get<{
+                    today_orders: number;
+                    pending_orders: number;
+                    revenue_today: number;
+                    avg_preparation_time: number;
+                    total_orders_this_month: number;
+                    revenue_this_month: number;
+                }>('/partner/restaurant/stats', true);
+
+                if (response.success && response.data) {
+                    return {
+                        success: true,
+                        data: response.data,
+                        statusCode: 200,
+                    };
+                }
+
+                return {
+                    success: false,
+                    error: response.error || 'Failed to fetch statistics',
+                    statusCode: response.statusCode || 400,
+                };
+            } catch (error) {
+                return {
+                    success: false,
+                    error: error instanceof Error ? error.message : 'Failed to fetch statistics',
+                    statusCode: 500,
+                };
+            }
+        },
+
+        /**
+         * Get menu items
+         */
+        getMenu: async (): Promise<ApiResponse<FoodItem[]>> => {
+            try {
+                const response = await apiClient.get<{
+                    items: FoodItem[];
+                    total_count: number;
+                }>('/partner/restaurant/menu', true);
+
+                if (response.success && response.data) {
+                    return {
+                        success: true,
+                        data: response.data.items,
+                        statusCode: 200,
+                    };
+                }
+
+                return {
+                    success: false,
+                    error: response.error || 'Failed to fetch menu',
+                    statusCode: response.statusCode || 400,
+                };
+            } catch (error) {
+                return {
+                    success: false,
+                    error: error instanceof Error ? error.message : 'Failed to fetch menu',
+                    statusCode: 500,
+                };
+            }
+        },
+
+        /**
+         * Update menu item status (availability)
+         */
+        updateMenuItemStatus: async (
+            itemId: string,
+            isAvailable: boolean
+        ): Promise<ApiResponse<FoodItem>> => {
+            try {
+                const response = await apiClient.put<FoodItem>(
+                    `/partner/restaurant/menu/${itemId}/availability`,
+                    { is_available: isAvailable },
+                    true
+                );
+
+                if (response.success && response.data) {
+                    return {
+                        success: true,
+                        data: response.data,
+                        statusCode: 200,
+                    };
+                }
+
+                return {
+                    success: false,
+                    error: response.error || 'Failed to update menu item status',
+                    statusCode: response.statusCode || 400,
+                };
+            } catch (error) {
+                return {
+                    success: false,
+                    error: error instanceof Error ? error.message : 'Failed to update menu item status',
+                    statusCode: 500,
+                };
+            }
+        },
+
+        /**
+         * Create menu item
+         */
+        createMenuItem: async (itemData: {
+            name: string;
+            price: number;
+            description: string;
+            category_id: string;
+            image_url?: string;
+            is_veg?: boolean;
+            ingredients?: string;
+            prep_time?: number;
+        }): Promise<ApiResponse<FoodItem>> => {
+            try {
+                const response = await apiClient.post<FoodItem>(
+                    '/partner/restaurant/menu',
+                    itemData,
+                    true
+                );
+
+                if (response.success && response.data) {
+                    return {
+                        success: true,
+                        data: response.data,
+                        statusCode: 201,
+                    };
+                }
+
+                return {
+                    success: false,
+                    error: response.error || 'Failed to create menu item',
+                    statusCode: response.statusCode || 400,
+                };
+            } catch (error) {
+                return {
+                    success: false,
+                    error: error instanceof Error ? error.message : 'Failed to create menu item',
+                    statusCode: 500,
+                };
+            }
+        },
+
+        /**
+         * Update menu item
+         */
+        updateMenuItem: async (
+            itemId: string,
+            itemData: {
+                name?: string;
+                price?: number;
+                description?: string;
+                image_url?: string;
+            }
+        ): Promise<ApiResponse<FoodItem>> => {
+            try {
+                const response = await apiClient.put<FoodItem>(
+                    `/partner/restaurant/menu/${itemId}`,
+                    itemData,
+                    true
+                );
+
+                if (response.success && response.data) {
+                    return {
+                        success: true,
+                        data: response.data,
+                        statusCode: 200,
+                    };
+                }
+
+                return {
+                    success: false,
+                    error: response.error || 'Failed to update menu item',
+                    statusCode: response.statusCode || 400,
+                };
+            } catch (error) {
+                return {
+                    success: false,
+                    error: error instanceof Error ? error.message : 'Failed to update menu item',
+                    statusCode: 500,
+                };
+            }
+        },
+
+        /**
+         * Delete menu item
+         */
+        deleteMenuItem: async (itemId: string): Promise<ApiResponse<void>> => {
+            try {
+                const response = await apiClient.delete<{ deleted: boolean }>(
+                    `/partner/restaurant/menu/${itemId}`,
+                    true
+                );
+
+                if (response.success) {
+                    return {
+                        success: true,
+                        data: undefined,
+                        statusCode: 200,
+                    };
+                }
+
+                return {
+                    success: false,
+                    error: response.error || 'Failed to delete menu item',
+                    statusCode: response.statusCode || 400,
+                };
+            } catch (error) {
+                return {
+                    success: false,
+                    error: error instanceof Error ? error.message : 'Failed to delete menu item',
+                    statusCode: 500,
+                };
+            }
+        },
+
+        /**
+         * Get earnings
+         */
+        getEarnings: async (period: string): Promise<ApiResponse<any>> => {
+            try {
+                const response = await apiClient.get<any>(
+                    `/partner/restaurant/earnings?period=${period}`,
+                    true
+                );
+
+                if (response.success && response.data) {
+                    return {
+                        success: true,
+                        data: response.data,
+                        statusCode: 200,
+                    };
+                }
+
+                return {
+                    success: false,
+                    error: response.error || 'Failed to fetch earnings',
+                    statusCode: response.statusCode || 400,
+                };
+            } catch (error) {
+                return {
+                    success: false,
+                    error: error instanceof Error ? error.message : 'Failed to fetch earnings',
+                    statusCode: 500,
+                };
+            }
+        },
+    },
+
+    // ============================================================================
+    // DELIVERY PARTNER APIs
+    // ============================================================================
+
+    delivery: {
+        /**
+         * Get available delivery requests
+         */
+        getRequests: async (): Promise<ApiResponse<Order[]>> => {
+            try {
+                const response = await apiClient.get<{
+                    requests: Order[];
+                    total_count: number;
+                }>('/partner/delivery/requests', true);
+
+                if (response.success && response.data) {
+                    return {
+                        success: true,
+                        data: response.data.requests,
+                        statusCode: 200,
+                    };
+                }
+
+                return {
+                    success: false,
+                    error: response.error || 'Failed to fetch delivery requests',
+                    statusCode: response.statusCode || 400,
+                };
+            } catch (error) {
+                return {
+                    success: false,
+                    error: error instanceof Error ? error.message : 'Failed to fetch delivery requests',
+                    statusCode: 500,
+                };
+            }
+        },
+
+        /**
+         * Accept delivery request
+         */
+        acceptRequest: async (orderId: string): Promise<ApiResponse<Order>> => {
+            try {
+                const response = await apiClient.post<Order>(
+                    `/partner/delivery/requests/${orderId}/accept`,
+                    {},
+                    true
+                );
+
+                if (response.success && response.data) {
+                    return {
+                        success: true,
+                        data: response.data,
+                        statusCode: 200,
+                    };
+                }
+
+                return {
+                    success: false,
+                    error: response.error || 'Failed to accept delivery request',
+                    statusCode: response.statusCode || 400,
+                };
+            } catch (error) {
+                return {
+                    success: false,
+                    error: error instanceof Error ? error.message : 'Failed to accept delivery request',
+                    statusCode: 500,
+                };
+            }
+        },
+
+        /**
+         * Update delivery status
+         */
+        updateDeliveryStatus: async (
+            orderId: string,
+            status: string
+        ): Promise<ApiResponse<Order>> => {
+            try {
+                const response = await apiClient.put<Order>(
+                    `/partner/delivery/orders/${orderId}/status`,
+                    { status },
+                    true
+                );
+
+                if (response.success && response.data) {
+                    return {
+                        success: true,
+                        data: response.data,
+                        statusCode: 200,
+                    };
+                }
+
+                return {
+                    success: false,
+                    error: response.error || 'Failed to update delivery status',
+                    statusCode: response.statusCode || 400,
+                };
+            } catch (error) {
+                return {
+                    success: false,
+                    error: error instanceof Error ? error.message : 'Failed to update delivery status',
+                    statusCode: 500,
+                };
+            }
+        },
+
+        /**
+         * Toggle availability (online/offline)
+         */
+        toggleAvailability: async (isOnline: boolean): Promise<ApiResponse<{ is_online: boolean }>> => {
+            try {
+                const response = await apiClient.put<{ is_online: boolean }>(
+                    '/partner/delivery/availability',
+                    { is_online: isOnline },
+                    true
+                );
+
+                if (response.success && response.data) {
+                    return {
+                        success: true,
+                        data: response.data,
+                        statusCode: 200,
+                    };
+                }
+
+                return {
+                    success: false,
+                    error: response.error || 'Failed to update availability',
+                    statusCode: response.statusCode || 400,
+                };
+            } catch (error) {
+                return {
+                    success: false,
+                    error: error instanceof Error ? error.message : 'Failed to update availability',
+                    statusCode: 500,
+                };
+            }
+        },
+
+        /**
+         * Get delivery earnings
+         */
+        getEarnings: async (period: string): Promise<ApiResponse<any>> => {
+            try {
+                const response = await apiClient.get<any>(
+                    `/partner/delivery/earnings?period=${period}`,
+                    true
+                );
+
+                if (response.success && response.data) {
+                    return {
+                        success: true,
+                        data: response.data,
+                        statusCode: 200,
+                    };
+                }
+
+                return {
+                    success: false,
+                    error: response.error || 'Failed to fetch earnings',
+                    statusCode: response.statusCode || 400,
+                };
+            } catch (error) {
+                return {
+                    success: false,
+                    error: error instanceof Error ? error.message : 'Failed to fetch earnings',
+                    statusCode: 500,
+                };
+            }
+        },
+    },
 };
