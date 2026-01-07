@@ -1,14 +1,14 @@
 // oneQlick/app/(tabs)/orders.tsx (I18N + THEME FIXED)
 
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Alert, RefreshControl, Modal, TextInput } from 'react-native';
 import { Text as RNText } from 'react-native';
 import { useRouter } from 'expo-router';
 import AppHeader from '../../components/common/AppHeader';
 import { MaterialIcons } from '@expo/vector-icons';
-import { getRestaurantOrders } from '../../utils/mock';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useRestaurantOrderStore } from '../../store/restaurantOrderStore';
 
 // *** Data Interfaces ***
 interface RestaurantOrder {
@@ -36,6 +36,8 @@ const ActionButton = ({ title, onPress, color, styles }: {
 // Order Card
 const OrderCard = ({
     order,
+    onAccept,
+    onReject,
     onStatusChange,
     onOpenDetails,
     onOpenNotes,
@@ -43,7 +45,9 @@ const OrderCard = ({
     t
 }: {
     order: RestaurantOrder;
-    onStatusChange: (id: string, newStatus: RestaurantOrder['status']) => void;
+    onAccept?: (id: string) => void;
+    onReject?: (id: string) => void;
+    onStatusChange?: (id: string) => void;
     onOpenDetails: (id: string) => void;
     onOpenNotes: (id: string) => void;
     styles: any;
@@ -69,15 +73,15 @@ const OrderCard = ({
             return (
                 <View style={styles.actionsRow}>
                     <ActionButton title={t("accept")} color="#4CAF50"
-                        onPress={() => onStatusChange(order.id, 'Preparing')} styles={styles} />
+                        onPress={() => onAccept?.(order.id)} styles={styles} />
                     <ActionButton title={t("reject")} color="#F44336"
-                        onPress={() => onStatusChange(order.id, 'Rejected')} styles={styles} />
+                        onPress={() => onReject?.(order.id)} styles={styles} />
                 </View>
             );
         } else if (order.status === 'Preparing') {
             return (
                 <ActionButton title={t("mark_ready")} color="#007AFF"
-                    onPress={() => onStatusChange(order.id, 'Ready')} styles={styles} />
+                    onPress={() => onStatusChange?.(order.id)} styles={styles} />
             );
         } else if (order.status === 'Ready') {
             return (
@@ -146,21 +150,111 @@ const OrderCard = ({
 // MAIN SCREEN
 export default function OrderManagementScreen() {
     const router = useRouter();
-    const [orders, setOrders] = useState<RestaurantOrder[]>([]);
     const { theme } = useTheme();
     const { t } = useLanguage();
 
+    // Restaurant Order Store
+    const {
+        pendingOrders,
+        activeOrders,
+        orderHistory,
+        isLoading,
+        error,
+        fetchPendingOrders,
+        fetchActiveOrders,
+        fetchOrderHistory,
+        acceptOrder,
+        rejectOrder,
+        updateOrderStatus,
+        refreshAllOrders,
+    } = useRestaurantOrderStore();
+
+    // Local state
+    const [refreshing, setRefreshing] = useState(false);
+    const [showAcceptModal, setShowAcceptModal] = useState(false);
+    const [showRejectModal, setShowRejectModal] = useState(false);
+    const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+    const [prepTime, setPrepTime] = useState('30');
+    const [rejectReason, setRejectReason] = useState('');
+
+    // Fetch orders on mount
     useEffect(() => {
-        setOrders(getRestaurantOrders() as RestaurantOrder[]);
+        fetchPendingOrders();
+        fetchActiveOrders();
+        fetchOrderHistory(1, 20);
     }, []);
 
-    const handleStatusChange = (id: string, newStatus: RestaurantOrder['status']) => {
-        setOrders((prev) =>
-            prev.map((o) => (o.id === id ? { ...o, status: newStatus } : o))
-        );
-        Alert.alert(t('status_updated'), `${t('order')} ${id} ${t('is_now')} ${t(newStatus.toLowerCase())}.`);
+    // Handle refresh
+    const handleRefresh = async () => {
+        setRefreshing(true);
+        await refreshAllOrders();
+        setRefreshing(false);
     };
 
+    // Handle accept order
+    const handleAcceptOrder = (orderId: string) => {
+        setSelectedOrderId(orderId);
+        setPrepTime('30');
+        setShowAcceptModal(true);
+    };
+
+    const confirmAcceptOrder = async () => {
+        if (!selectedOrderId) return;
+
+        const prepTimeNum = parseInt(prepTime);
+        if (isNaN(prepTimeNum) || prepTimeNum < 5 || prepTimeNum > 120) {
+            Alert.alert(t('error'), 'Please enter a valid preparation time (5-120 minutes)');
+            return;
+        }
+
+        const result = await acceptOrder(selectedOrderId, prepTimeNum);
+        setShowAcceptModal(false);
+
+        if (result.success) {
+            Alert.alert(t('success'), t('order_accepted'));
+            await refreshAllOrders();
+        } else {
+            Alert.alert(t('error'), result.error || 'Failed to accept order');
+        }
+    };
+
+    // Handle reject order
+    const handleRejectOrder = (orderId: string) => {
+        setSelectedOrderId(orderId);
+        setRejectReason('');
+        setShowRejectModal(true);
+    };
+
+    const confirmRejectOrder = async () => {
+        if (!selectedOrderId || !rejectReason.trim()) {
+            Alert.alert(t('error'), 'Please provide a rejection reason');
+            return;
+        }
+
+        const result = await rejectOrder(selectedOrderId, rejectReason);
+        setShowRejectModal(false);
+
+        if (result.success) {
+            Alert.alert(t('success'), t('order_rejected'));
+            await refreshAllOrders();
+        } else {
+            Alert.alert(t('error'), result.error || 'Failed to reject order');
+        }
+    };
+
+    // Handle status change
+    const handleStatusChange = async (orderId: string, newStatus: 'preparing' | 'ready_for_pickup') => {
+        const result = await updateOrderStatus(orderId, newStatus);
+
+        if (result.success) {
+            Alert.alert(t('success'), t('status_updated'));
+            await refreshAllOrders();
+        } else {
+            Alert.alert(t('error'), result.error || 'Failed to update status');
+        }
+    };
+
+    // Navigation handlers
     const handleOpenDetails = (id: string) => {
         router.push({ pathname: '/restaurant-order-details', params: { orderId: id } });
     };
@@ -169,9 +263,26 @@ export default function OrderManagementScreen() {
         router.push({ pathname: '/order-notes', params: { orderId: id } });
     };
 
-    const newOrders = orders.filter(o => o.status === 'New');
-    const activeOrders = orders.filter(o => o.status === 'Preparing' || o.status === 'Ready');
-    const completedOrders = orders.filter(o => o.status === 'Delivered' || o.status === 'Rejected');
+    // Map backend orders to UI format
+    const mapToUIOrder = (order: any): RestaurantOrder => ({
+        id: order.order_id,
+        status: order.order_status === 'pending' ? 'New' :
+            order.order_status === 'confirmed' || order.order_status === 'preparing' ? 'Preparing' :
+                order.order_status === 'ready_for_pickup' ? 'Ready' :
+                    order.order_status === 'delivered' ? 'Delivered' : 'Rejected',
+        total: order.total_amount,
+        customer: `${order.customer?.first_name || ''} ${order.customer?.last_name || ''}`.trim() || 'Customer',
+        pickup_time: order.estimated_delivery_time ? new Date(order.estimated_delivery_time).toLocaleTimeString() : 'TBD',
+        items: (order.items || []).map((item: any) => ({
+            name: item.food_item_name || 'Item',
+            qty: item.quantity
+        })),
+        notes: order.special_instructions
+    });
+
+    const newOrders = pendingOrders.map(mapToUIOrder);
+    const activeOrdersMapped = activeOrders.map(mapToUIOrder);
+    const completedOrdersMapped = orderHistory.map(mapToUIOrder);
 
     const dynamicStyles = StyleSheet.create({
         container: {
@@ -247,7 +358,126 @@ export default function OrderManagementScreen() {
         actionButtonText: { color: '#fff', fontSize: 15, fontWeight: 'bold' },
 
         readyText: { textAlign: 'center', fontSize: 15, fontWeight: '600', color: '#FF9800', padding: 5 },
-        finalStatusText: { textAlign: 'center', fontSize: 15, fontWeight: '600', color: theme === 'dark' ? '#BBB' : '#777', padding: 5 }
+        finalStatusText: { textAlign: 'center', fontSize: 15, fontWeight: '600', color: theme === 'dark' ? '#BBB' : '#777', padding: 5 },
+
+        // Modal styles
+        modalOverlay: {
+            flex: 1,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            justifyContent: 'center',
+            alignItems: 'center',
+        },
+        modalContent: {
+            backgroundColor: theme === 'dark' ? '#1E1E1E' : '#fff',
+            borderRadius: 15,
+            padding: 20,
+            width: '85%',
+            maxWidth: 400,
+        },
+        modalTitle: {
+            fontSize: 20,
+            fontWeight: 'bold',
+            color: theme === 'dark' ? '#FFF' : '#333',
+            marginBottom: 15,
+            textAlign: 'center',
+        },
+        modalLabel: {
+            fontSize: 14,
+            color: theme === 'dark' ? '#BBB' : '#666',
+            marginBottom: 10,
+        },
+        prepTimeButtons: {
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+            gap: 10,
+            marginBottom: 15,
+        },
+        prepTimeButton: {
+            paddingVertical: 10,
+            paddingHorizontal: 15,
+            borderRadius: 8,
+            borderWidth: 1,
+            borderColor: theme === 'dark' ? '#555' : '#ddd',
+            backgroundColor: theme === 'dark' ? '#2A2A2A' : '#f5f5f5',
+        },
+        prepTimeButtonActive: {
+            backgroundColor: '#4CAF50',
+            borderColor: '#4CAF50',
+        },
+        prepTimeButtonText: {
+            fontSize: 14,
+            color: theme === 'dark' ? '#FFF' : '#333',
+        },
+        prepTimeButtonTextActive: {
+            color: '#fff',
+            fontWeight: 'bold',
+        },
+        reasonButtons: {
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+            gap: 10,
+            marginBottom: 15,
+        },
+        reasonButton: {
+            paddingVertical: 10,
+            paddingHorizontal: 15,
+            borderRadius: 8,
+            borderWidth: 1,
+            borderColor: theme === 'dark' ? '#555' : '#ddd',
+            backgroundColor: theme === 'dark' ? '#2A2A2A' : '#f5f5f5',
+        },
+        reasonButtonActive: {
+            backgroundColor: '#F44336',
+            borderColor: '#F44336',
+        },
+        reasonButtonText: {
+            fontSize: 14,
+            color: theme === 'dark' ? '#FFF' : '#333',
+        },
+        reasonButtonTextActive: {
+            color: '#fff',
+            fontWeight: 'bold',
+        },
+        input: {
+            borderWidth: 1,
+            borderColor: theme === 'dark' ? '#555' : '#ddd',
+            borderRadius: 8,
+            padding: 12,
+            fontSize: 16,
+            color: theme === 'dark' ? '#FFF' : '#333',
+            backgroundColor: theme === 'dark' ? '#2A2A2A' : '#fff',
+            marginBottom: 15,
+        },
+        textArea: {
+            height: 80,
+            textAlignVertical: 'top',
+        },
+        modalButtons: {
+            flexDirection: 'row',
+            gap: 10,
+        },
+        modalButton: {
+            flex: 1,
+            paddingVertical: 12,
+            borderRadius: 8,
+            alignItems: 'center',
+        },
+        cancelButton: {
+            backgroundColor: theme === 'dark' ? '#444' : '#e0e0e0',
+        },
+        confirmButton: {
+            backgroundColor: '#4CAF50',
+        },
+        cancelButtonText: {
+            color: theme === 'dark' ? '#FFF' : '#666',
+            fontSize: 16,
+            fontWeight: 'bold',
+        },
+        confirmButtonText: {
+            color: '#fff',
+            fontSize: 16,
+            fontWeight: 'bold',
+        },
     });
 
     const renderOrderList = (titleKey: string, list: RestaurantOrder[]) => (
@@ -265,7 +495,9 @@ export default function OrderManagementScreen() {
                     <OrderCard
                         key={order.id}
                         order={order}
-                        onStatusChange={handleStatusChange}
+                        onAccept={handleAcceptOrder}
+                        onReject={handleRejectOrder}
+                        onStatusChange={(id) => handleStatusChange(id, 'ready_for_pickup')}
                         onOpenDetails={handleOpenDetails}
                         onOpenNotes={handleOpenNotes}
                         styles={dynamicStyles}
@@ -280,13 +512,133 @@ export default function OrderManagementScreen() {
         <View style={dynamicStyles.container}>
             <AppHeader title={t("order_management")} showBack={false} />
 
-            <ScrollView style={dynamicStyles.content}>
+            <ScrollView
+                style={dynamicStyles.content}
+                refreshControl={
+                    <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+                }
+            >
                 {renderOrderList('new_orders_section', newOrders)}
-                {renderOrderList('active_orders_section', activeOrders)}
-                {renderOrderList('completed_orders_section', completedOrders)}
+                {renderOrderList('active_orders_section', activeOrdersMapped)}
+                {renderOrderList('completed_orders_section', completedOrdersMapped)}
 
                 <View style={{ height: 50 }} />
             </ScrollView>
+
+            {/* Accept Order Modal */}
+            <Modal
+                visible={showAcceptModal}
+                transparent
+                animationType="slide"
+                onRequestClose={() => setShowAcceptModal(false)}
+            >
+                <View style={dynamicStyles.modalOverlay}>
+                    <View style={dynamicStyles.modalContent}>
+                        <RNText style={dynamicStyles.modalTitle}>{t('accept_order')}</RNText>
+                        <RNText style={dynamicStyles.modalLabel}>{t('preparation_time')} (minutes):</RNText>
+
+                        <View style={dynamicStyles.prepTimeButtons}>
+                            {['15', '20', '30', '45'].map((time) => (
+                                <TouchableOpacity
+                                    key={time}
+                                    style={[
+                                        dynamicStyles.prepTimeButton,
+                                        prepTime === time && dynamicStyles.prepTimeButtonActive
+                                    ]}
+                                    onPress={() => setPrepTime(time)}
+                                >
+                                    <RNText style={[
+                                        dynamicStyles.prepTimeButtonText,
+                                        prepTime === time && dynamicStyles.prepTimeButtonTextActive
+                                    ]}>{time} min</RNText>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+
+                        <TextInput
+                            style={dynamicStyles.input}
+                            value={prepTime}
+                            onChangeText={setPrepTime}
+                            keyboardType="numeric"
+                            placeholder="Custom time"
+                            placeholderTextColor={theme === 'dark' ? '#888' : '#999'}
+                        />
+
+                        <View style={dynamicStyles.modalButtons}>
+                            <TouchableOpacity
+                                style={[dynamicStyles.modalButton, dynamicStyles.cancelButton]}
+                                onPress={() => setShowAcceptModal(false)}
+                            >
+                                <RNText style={dynamicStyles.cancelButtonText}>{t('cancel')}</RNText>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[dynamicStyles.modalButton, dynamicStyles.confirmButton]}
+                                onPress={confirmAcceptOrder}
+                            >
+                                <RNText style={dynamicStyles.confirmButtonText}>{t('confirm')}</RNText>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* Reject Order Modal */}
+            <Modal
+                visible={showRejectModal}
+                transparent
+                animationType="slide"
+                onRequestClose={() => setShowRejectModal(false)}
+            >
+                <View style={dynamicStyles.modalOverlay}>
+                    <View style={dynamicStyles.modalContent}>
+                        <RNText style={dynamicStyles.modalTitle}>{t('reject_order')}</RNText>
+                        <RNText style={dynamicStyles.modalLabel}>{t('rejection_reason')}:</RNText>
+
+                        <View style={dynamicStyles.reasonButtons}>
+                            {['Out of stock', 'Too busy', 'Closing soon', 'Other'].map((reason) => (
+                                <TouchableOpacity
+                                    key={reason}
+                                    style={[
+                                        dynamicStyles.reasonButton,
+                                        rejectReason === reason && dynamicStyles.reasonButtonActive
+                                    ]}
+                                    onPress={() => setRejectReason(reason)}
+                                >
+                                    <RNText style={[
+                                        dynamicStyles.reasonButtonText,
+                                        rejectReason === reason && dynamicStyles.reasonButtonTextActive
+                                    ]}>{reason}</RNText>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+
+                        <TextInput
+                            style={[dynamicStyles.input, dynamicStyles.textArea]}
+                            value={rejectReason}
+                            onChangeText={setRejectReason}
+                            placeholder="Enter custom reason"
+                            placeholderTextColor={theme === 'dark' ? '#888' : '#999'}
+                            multiline
+                            numberOfLines={3}
+                        />
+
+                        <View style={dynamicStyles.modalButtons}>
+                            <TouchableOpacity
+                                style={[dynamicStyles.modalButton, dynamicStyles.cancelButton]}
+                                onPress={() => setShowRejectModal(false)}
+                            >
+                                <RNText style={dynamicStyles.cancelButtonText}>{t('cancel')}</RNText>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[dynamicStyles.modalButton, dynamicStyles.confirmButton, { backgroundColor: '#F44336' }]}
+                                onPress={confirmRejectOrder}
+                            >
+                                <RNText style={dynamicStyles.confirmButtonText}>{t('confirm')}</RNText>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 }
