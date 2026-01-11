@@ -81,6 +81,41 @@ export default function LoginScreen() {
       const result = await login(loginForm.identifier, loginForm.password);
 
       if (result?.success) {
+        // Get user data from result
+        const loginData: any = result;
+        const user = loginData.data?.user || loginData.user;
+
+        if (user) {
+          // Validate user role before allowing access
+          const { isRoleAllowed, getUnauthorizedRoleMessage } = await import('../../utils/roleValidator');
+
+          if (!isRoleAllowed(user.role)) {
+            // User is not a partner (restaurant owner or delivery partner) - deny access
+            const { title, message } = getUnauthorizedRoleMessage(user.role);
+
+            // Logout to clean up the session created by backend
+            const { useAuthStore } = await import('../../store/authStore');
+            await useAuthStore.getState().logout();
+
+            Alert.alert(
+              title,
+              message,
+              [{ text: 'OK' }]
+            );
+
+            // Don't navigate
+            setIsLoading(false);
+            return;
+          }
+
+          // User is a valid partner - save to store and proceed
+          const { useAuthStore } = await import('../../store/authStore');
+          useAuthStore.setState({
+            user: user,
+            isAuthenticated: true
+          });
+        }
+
         router.replace('/(tabs)');
       } else {
         const errorMessage = result?.error || 'Please check your email/phone and password and try again';
