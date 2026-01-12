@@ -72,13 +72,13 @@ export const useAuthStore = create<AuthState>()(
           const response = await authService.login(identifier, password);
 
           if (response.success && response.data) {
+            // Don't save to store yet - return data for role validation
+            // The login screen will validate role and call setUser if valid
             set({
-              isAuthenticated: true,
-              user: response.data.user,
               isLoading: false,
               error: null,
             });
-            return { success: true };
+            return { success: true, data: response.data };
           } else {
             set({
               isAuthenticated: false,
@@ -293,6 +293,21 @@ export const useAuthStore = create<AuthState>()(
           const user = await authService.getCurrentUser();
 
           if (isAuthenticated && user) {
+            // ✅ RBAC: Validate user role before restoring session
+            const { isRoleAllowed } = await import('../utils/roleValidator');
+
+            if (!isRoleAllowed(user.role)) {
+              // User is not a partner - clear session
+              console.log(`🚫 RBAC: User with role '${user.role}' is not allowed in Partner App. Logging out.`);
+              await authService.logout();
+              set({
+                isAuthenticated: false,
+                user: null,
+                isLoading: false,
+              });
+              return;
+            }
+
             set({
               isAuthenticated: true,
               user,
