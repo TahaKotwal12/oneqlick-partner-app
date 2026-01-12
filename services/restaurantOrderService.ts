@@ -213,7 +213,7 @@ export const restaurantOrderService = {
                 {
                     method: 'POST',
                     body: JSON.stringify({
-                        prep_time_minutes: prepTimeMinutes,
+                        estimated_prep_time: prepTimeMinutes,
                     }),
                 }
             );
@@ -265,7 +265,7 @@ export const restaurantOrderService = {
                 {
                     method: 'POST',
                     body: JSON.stringify({
-                        new_status: newStatus,
+                        status: newStatus,
                     }),
                 }
             );

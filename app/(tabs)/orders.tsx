@@ -1,165 +1,43 @@
-// oneQlick/app/(tabs)/orders.tsx (I18N + THEME FIXED)
-
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Alert, RefreshControl, Modal, TextInput } from 'react-native';
-import { Text as RNText } from 'react-native';
+import {
+    View,
+    StyleSheet,
+    FlatList,
+    TouchableOpacity,
+    Alert,
+    RefreshControl,
+    Modal,
+    TextInput,
+    ScrollView,
+} from 'react-native';
+import { Text } from 'react-native-paper';
 import { useRouter } from 'expo-router';
-import AppHeader from '../../components/common/AppHeader';
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useRestaurantOrderStore } from '../../store/restaurantOrderStore';
 
-// *** Data Interfaces ***
 interface RestaurantOrder {
     id: string;
     status: 'New' | 'Preparing' | 'Ready' | 'Rejected' | 'Delivered';
     total: number;
     customer: string;
     pickup_time: string;
-    items: { name: string, qty: number }[];
+    items: { name: string; qty: number }[];
     notes?: string;
 }
 
-// Action Button
-const ActionButton = ({ title, onPress, color, styles }: {
-    title: string;
-    onPress: () => void;
-    color: string;
-    styles: any;
-}) => (
-    <TouchableOpacity onPress={onPress} style={[styles.actionButton, { backgroundColor: color }]}>
-        <RNText style={styles.actionButtonText}>{title}</RNText>
-    </TouchableOpacity>
-);
-
-// Order Card
-const OrderCard = ({
-    order,
-    onAccept,
-    onReject,
-    onStatusChange,
-    onOpenDetails,
-    onOpenNotes,
-    styles,
-    t
-}: {
-    order: RestaurantOrder;
-    onAccept?: (id: string) => void;
-    onReject?: (id: string) => void;
-    onStatusChange?: (id: string) => void;
-    onOpenDetails: (id: string) => void;
-    onOpenNotes: (id: string) => void;
-    styles: any;
-    t: (key: string) => string;
-}) => {
-
-    const getStatusChipStyle = (status: string) => {
-        switch (status) {
-            case 'New': return { backgroundColor: '#FF9800', color: '#fff' };
-            case 'Preparing': return { backgroundColor: '#2196F3', color: '#fff' };
-            case 'Ready': return { backgroundColor: '#4CAF50', color: '#fff' };
-            case 'Rejected': return { backgroundColor: '#F44336', color: '#fff' };
-            case 'Delivered': return { backgroundColor: '#000000', color: '#fff' };
-            default: return { backgroundColor: '#9E9E9E', color: '#fff' };
-        }
-    };
-
-    const statusStyle = getStatusChipStyle(order.status);
-    const translatedStatus = t(order.status.toLowerCase());
-
-    const renderActions = () => {
-        if (order.status === 'New') {
-            return (
-                <View style={styles.actionsRow}>
-                    <ActionButton title={t("accept")} color="#4CAF50"
-                        onPress={() => onAccept?.(order.id)} styles={styles} />
-                    <ActionButton title={t("reject")} color="#F44336"
-                        onPress={() => onReject?.(order.id)} styles={styles} />
-                </View>
-            );
-        } else if (order.status === 'Preparing') {
-            return (
-                <ActionButton title={t("mark_ready")} color="#007AFF"
-                    onPress={() => onStatusChange?.(order.id)} styles={styles} />
-            );
-        } else if (order.status === 'Ready') {
-            return (
-                <RNText style={styles.readyText}>{t('waiting_driver_pickup')}</RNText>
-            );
-        }
-        return (
-            <RNText style={styles.finalStatusText}>{t('status')}: {translatedStatus}</RNText>
-        );
-    };
-
-    return (
-        <TouchableOpacity style={styles.card} onPress={() => onOpenDetails(order.id)}>
-            <View style={styles.header}>
-                <RNText style={styles.orderId}>{t('order_hash')}{order.id}</RNText>
-
-                <View style={styles.headerActions}>
-
-                    <TouchableOpacity
-                        onPress={(e) => {
-                            e.stopPropagation();
-                            onOpenNotes(order.id);
-                        }}
-                        style={styles.notesButton}
-                    >
-                        <MaterialIcons name="chat-bubble-outline" size={20} color={styles.notesIconColor.color} />
-                    </TouchableOpacity>
-
-                    <View style={[styles.statusChip, { backgroundColor: statusStyle.backgroundColor }]}>
-                        <RNText style={[styles.statusChipText, { color: statusStyle.color }]}>
-                            {translatedStatus}
-                        </RNText>
-                    </View>
-                </View>
-            </View>
-
-            <View style={styles.detailRow}>
-                <RNText style={styles.label}>{t('customer')}:</RNText>
-                <RNText style={styles.value}>{order.customer}</RNText>
-            </View>
-
-            <View style={styles.detailRow}>
-                <RNText style={styles.label}>{t('pickup_time')}:</RNText>
-                <RNText style={styles.value}>{order.pickup_time}</RNText>
-            </View>
-
-            <View style={styles.detailRow}>
-                <RNText style={styles.label}>{t('total')}:</RNText>
-                <RNText style={styles.totalValue}>₹{order.total.toFixed(2)}</RNText>
-            </View>
-
-            <View style={styles.itemsContainer}>
-                <RNText style={styles.itemsTitle}>{t('items')}:</RNText>
-                {order.items.map((item, index) => (
-                    <RNText key={index} style={styles.itemText}>
-                        {item.qty}x {item.name}
-                    </RNText>
-                ))}
-            </View>
-
-            <View style={styles.actionsContainer}>{renderActions()}</View>
-        </TouchableOpacity>
-    );
-};
-
-// MAIN SCREEN
 export default function OrderManagementScreen() {
     const router = useRouter();
     const { theme } = useTheme();
     const { t } = useLanguage();
 
-    // Restaurant Order Store
+    // Store
     const {
         pendingOrders,
         activeOrders,
         orderHistory,
         isLoading,
-        error,
         fetchPendingOrders,
         fetchActiveOrders,
         fetchOrderHistory,
@@ -170,6 +48,7 @@ export default function OrderManagementScreen() {
     } = useRestaurantOrderStore();
 
     // Local state
+    const [activeTab, setActiveTab] = useState<'pending' | 'active' | 'history'>('pending');
     const [refreshing, setRefreshing] = useState(false);
     const [showAcceptModal, setShowAcceptModal] = useState(false);
     const [showRejectModal, setShowRejectModal] = useState(false);
@@ -184,14 +63,45 @@ export default function OrderManagementScreen() {
         fetchOrderHistory(1, 20);
     }, []);
 
-    // Handle refresh
+    // Map backend orders to UI format
+    const mapToUIOrder = (order: any): RestaurantOrder => ({
+        id: order.order_id || '',
+        status:
+            order.order_status === 'pending'
+                ? 'New'
+                : order.order_status === 'confirmed' || order.order_status === 'preparing'
+                    ? 'Preparing'
+                    : order.order_status === 'ready_for_pickup'
+                        ? 'Ready'
+                        : order.order_status === 'delivered'
+                            ? 'Delivered'
+                            : 'Rejected',
+        total: order.total_amount || 0,
+        customer: `${order.customer?.first_name || ''} ${order.customer?.last_name || ''}`.trim() || 'Customer',
+        pickup_time: order.estimated_delivery_time
+            ? new Date(order.estimated_delivery_time).toLocaleTimeString()
+            : 'TBD',
+        items: (order.items || []).map((item: any) => ({
+            name: item.food_item_name || 'Item',
+            qty: item.quantity || 0,
+        })),
+        notes: order.order_status || '', // Store backend status here to determine button
+    });
+
+    const displayOrders =
+        activeTab === 'pending'
+            ? pendingOrders.map(mapToUIOrder)
+            : activeTab === 'active'
+                ? activeOrders.map(mapToUIOrder)
+                : orderHistory.map(mapToUIOrder);
+
+    // Handlers
     const handleRefresh = async () => {
         setRefreshing(true);
         await refreshAllOrders();
         setRefreshing(false);
     };
 
-    // Handle accept order
     const handleAcceptOrder = (orderId: string) => {
         setSelectedOrderId(orderId);
         setPrepTime('30');
@@ -203,7 +113,7 @@ export default function OrderManagementScreen() {
 
         const prepTimeNum = parseInt(prepTime);
         if (isNaN(prepTimeNum) || prepTimeNum < 5 || prepTimeNum > 120) {
-            Alert.alert(t('error'), 'Please enter a valid preparation time (5-120 minutes)');
+            Alert.alert('Error', 'Please enter a valid preparation time (5-120 minutes)');
             return;
         }
 
@@ -211,14 +121,13 @@ export default function OrderManagementScreen() {
         setShowAcceptModal(false);
 
         if (result.success) {
-            Alert.alert(t('success'), t('order_accepted'));
+            Alert.alert('Success', 'Order accepted successfully');
             await refreshAllOrders();
         } else {
-            Alert.alert(t('error'), result.error || 'Failed to accept order');
+            Alert.alert('Error', result.error || 'Failed to accept order');
         }
     };
 
-    // Handle reject order
     const handleRejectOrder = (orderId: string) => {
         setSelectedOrderId(orderId);
         setRejectReason('');
@@ -227,7 +136,7 @@ export default function OrderManagementScreen() {
 
     const confirmRejectOrder = async () => {
         if (!selectedOrderId || !rejectReason.trim()) {
-            Alert.alert(t('error'), 'Please provide a rejection reason');
+            Alert.alert('Error', 'Please provide a rejection reason');
             return;
         }
 
@@ -235,405 +144,325 @@ export default function OrderManagementScreen() {
         setShowRejectModal(false);
 
         if (result.success) {
-            Alert.alert(t('success'), t('order_rejected'));
+            Alert.alert('Success', 'Order rejected');
             await refreshAllOrders();
         } else {
-            Alert.alert(t('error'), result.error || 'Failed to reject order');
+            Alert.alert('Error', result.error || 'Failed to reject order');
         }
     };
 
-    // Handle status change
-    const handleStatusChange = async (orderId: string, newStatus: 'preparing' | 'ready_for_pickup') => {
-        const result = await updateOrderStatus(orderId, newStatus);
+    const handleStartPreparing = async (orderId: string) => {
+        const result = await updateOrderStatus(orderId, 'preparing');
 
         if (result.success) {
-            Alert.alert(t('success'), t('status_updated'));
+            Alert.alert('Success', 'Order is now being prepared');
             await refreshAllOrders();
         } else {
-            Alert.alert(t('error'), result.error || 'Failed to update status');
+            Alert.alert('Error', result.error || 'Failed to start preparing');
         }
     };
 
-    // Navigation handlers
-    const handleOpenDetails = (id: string) => {
-        router.push({ pathname: '/restaurant-order-details', params: { orderId: id } });
+    const handleMarkReady = async (orderId: string) => {
+        const result = await updateOrderStatus(orderId, 'ready_for_pickup');
+
+        if (result.success) {
+            Alert.alert('Success', 'Order marked as ready');
+            await refreshAllOrders();
+        } else {
+            Alert.alert('Error', result.error || 'Failed to update status');
+        }
     };
 
-    const handleOpenNotes = (id: string) => {
-        router.push({ pathname: '/order-notes', params: { orderId: id } });
+    const getStatusColor = (status: string) => {
+        switch (status) {
+            case 'New':
+                return '#FF9800';
+            case 'Preparing':
+                return '#2196F3';
+            case 'Ready':
+                return '#4CAF50';
+            case 'Delivered':
+                return '#000';
+            case 'Rejected':
+                return '#F44336';
+            default:
+                return '#999';
+        }
     };
 
-    // Map backend orders to UI format
-    const mapToUIOrder = (order: any): RestaurantOrder => ({
-        id: order.order_id,
-        status: order.order_status === 'pending' ? 'New' :
-            order.order_status === 'confirmed' || order.order_status === 'preparing' ? 'Preparing' :
-                order.order_status === 'ready_for_pickup' ? 'Ready' :
-                    order.order_status === 'delivered' ? 'Delivered' : 'Rejected',
-        total: order.total_amount,
-        customer: `${order.customer?.first_name || ''} ${order.customer?.last_name || ''}`.trim() || 'Customer',
-        pickup_time: order.estimated_delivery_time ? new Date(order.estimated_delivery_time).toLocaleTimeString() : 'TBD',
-        items: (order.items || []).map((item: any) => ({
-            name: item.food_item_name || 'Item',
-            qty: item.quantity
-        })),
-        notes: order.special_instructions
-    });
+    const isDark = theme === 'dark';
 
-    const newOrders = pendingOrders.map(mapToUIOrder);
-    const activeOrdersMapped = activeOrders.map(mapToUIOrder);
-    const completedOrdersMapped = orderHistory.map(mapToUIOrder);
+    const renderOrderCard = ({ item }: { item: RestaurantOrder }) => (
+        <TouchableOpacity
+            style={[styles.card, { backgroundColor: isDark ? '#1E1E1E' : '#fff' }]}
+            onPress={() => router.push({ pathname: '/restaurant-order-details', params: { orderId: item.id } })}
+        >
+            {/* Header */}
+            <View style={styles.cardHeader}>
+                <Text style={[styles.orderId, { color: isDark ? '#FFF' : '#000' }]}>#{item.id.slice(0, 8)}</Text>
+                <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
+                    <Text style={styles.statusText}>{item.status}</Text>
+                </View>
+            </View>
 
-    const dynamicStyles = StyleSheet.create({
-        container: {
-            flex: 1,
-            backgroundColor: theme === 'dark' ? '#121212' : '#f5f5f5'
-        },
-        content: { padding: 15 },
+            {/* Customer Info */}
+            <View style={styles.infoRow}>
+                <MaterialCommunityIcons name="account" size={16} color={isDark ? '#BBB' : '#666'} />
+                <Text style={[styles.infoText, { color: isDark ? '#CCC' : '#333' }]}>{item.customer}</Text>
+            </View>
 
-        sectionTitle: {
-            fontSize: 16,
-            fontWeight: '700',
-            color: theme === 'dark' ? '#BB86FC' : '#333',
-            marginBottom: 10,
-            marginTop: 10
-        },
+            {/* Pickup Time */}
+            <View style={styles.infoRow}>
+                <MaterialCommunityIcons name="clock-outline" size={16} color={isDark ? '#BBB' : '#666'} />
+                <Text style={[styles.infoText, { color: isDark ? '#CCC' : '#333' }]}>{item.pickup_time}</Text>
+            </View>
 
-        emptyText: {
-            textAlign: 'center',
-            color: theme === 'dark' ? '#AAA' : '#999',
-            paddingVertical: 15,
-            backgroundColor: theme === 'dark' ? '#1E1E1E' : '#fff',
-            borderRadius: 8,
-            marginBottom: 15,
-        },
+            {/* Items */}
+            <View style={styles.itemsSection}>
+                {item.items.slice(0, 2).map((orderItem, idx) => (
+                    <Text key={idx} style={[styles.itemText, { color: isDark ? '#AAA' : '#666' }]}>
+                        • {orderItem.qty}x {orderItem.name}
+                    </Text>
+                ))}
+                {item.items.length > 2 && (
+                    <Text style={[styles.itemText, { color: isDark ? '#AAA' : '#666' }]}>
+                        +{item.items.length - 2} more items
+                    </Text>
+                )}
+            </View>
 
-        card: {
-            backgroundColor: theme === 'dark' ? '#1E1E1E' : '#fff',
-            borderRadius: 10,
-            padding: 15,
-            marginBottom: 15,
-            elevation: 3,
-            borderWidth: theme === 'dark' ? 1 : 0,
-            borderColor: theme === 'dark' ? '#333' : 'transparent',
-        },
+            {/* Total */}
+            <View style={styles.totalRow}>
+                <Text style={[styles.totalLabel, { color: isDark ? '#BBB' : '#666' }]}>Total:</Text>
+                <Text style={styles.totalAmount}>₹{(item.total || 0).toFixed(2)}</Text>
+            </View>
 
-        header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-        headerActions: { flexDirection: 'row', alignItems: 'center' },
-        notesButton: { padding: 5, marginRight: 10 },
-        notesIconColor: { color: theme === 'dark' ? '#BBB' : '#777' },
-
-        orderId: { fontSize: 18, fontWeight: '900', color: theme === 'dark' ? '#FFF' : '#333' },
-
-        statusChip: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 15 },
-        statusChipText: { fontSize: 12, fontWeight: 'bold' },
-
-        detailRow: {
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            paddingVertical: 3,
-            borderBottomWidth: 1,
-            borderBottomColor: theme === 'dark' ? '#292929' : '#fafafa',
-        },
-
-        label: { fontSize: 14, color: theme === 'dark' ? '#BBB' : '#777' },
-        value: { fontSize: 14, fontWeight: '600', color: theme === 'dark' ? '#FFF' : '#333' },
-
-        totalValue: { fontSize: 16, fontWeight: '800', color: '#4CAF50' },
-
-        itemsContainer: { marginTop: 10, paddingTop: 5, borderTopWidth: 1, borderTopColor: theme === 'dark' ? '#333' : '#eee' },
-        itemsTitle: { fontSize: 14, fontWeight: '700', marginBottom: 5, color: theme === 'dark' ? '#FFF' : '#333' },
-        itemText: { fontSize: 13, color: theme === 'dark' ? '#AAA' : '#666', marginLeft: 5 },
-
-        actionsContainer: { marginTop: 15 },
-        actionsRow: { flexDirection: 'row', justifyContent: 'space-between' },
-
-        actionButton: {
-            paddingVertical: 10,
-            borderRadius: 8,
-            flex: 1,
-            marginHorizontal: 5,
-            alignItems: 'center',
-        },
-        actionButtonText: { color: '#fff', fontSize: 15, fontWeight: 'bold' },
-
-        readyText: { textAlign: 'center', fontSize: 15, fontWeight: '600', color: '#FF9800', padding: 5 },
-        finalStatusText: { textAlign: 'center', fontSize: 15, fontWeight: '600', color: theme === 'dark' ? '#BBB' : '#777', padding: 5 },
-
-        // Modal styles
-        modalOverlay: {
-            flex: 1,
-            backgroundColor: 'rgba(0,0,0,0.5)',
-            justifyContent: 'center',
-            alignItems: 'center',
-        },
-        modalContent: {
-            backgroundColor: theme === 'dark' ? '#1E1E1E' : '#fff',
-            borderRadius: 15,
-            padding: 20,
-            width: '85%',
-            maxWidth: 400,
-        },
-        modalTitle: {
-            fontSize: 20,
-            fontWeight: 'bold',
-            color: theme === 'dark' ? '#FFF' : '#333',
-            marginBottom: 15,
-            textAlign: 'center',
-        },
-        modalLabel: {
-            fontSize: 14,
-            color: theme === 'dark' ? '#BBB' : '#666',
-            marginBottom: 10,
-        },
-        prepTimeButtons: {
-            flexDirection: 'row',
-            flexWrap: 'wrap',
-            gap: 10,
-            marginBottom: 15,
-        },
-        prepTimeButton: {
-            paddingVertical: 10,
-            paddingHorizontal: 15,
-            borderRadius: 8,
-            borderWidth: 1,
-            borderColor: theme === 'dark' ? '#555' : '#ddd',
-            backgroundColor: theme === 'dark' ? '#2A2A2A' : '#f5f5f5',
-        },
-        prepTimeButtonActive: {
-            backgroundColor: '#4CAF50',
-            borderColor: '#4CAF50',
-        },
-        prepTimeButtonText: {
-            fontSize: 14,
-            color: theme === 'dark' ? '#FFF' : '#333',
-        },
-        prepTimeButtonTextActive: {
-            color: '#fff',
-            fontWeight: 'bold',
-        },
-        reasonButtons: {
-            flexDirection: 'row',
-            flexWrap: 'wrap',
-            gap: 10,
-            marginBottom: 15,
-        },
-        reasonButton: {
-            paddingVertical: 10,
-            paddingHorizontal: 15,
-            borderRadius: 8,
-            borderWidth: 1,
-            borderColor: theme === 'dark' ? '#555' : '#ddd',
-            backgroundColor: theme === 'dark' ? '#2A2A2A' : '#f5f5f5',
-        },
-        reasonButtonActive: {
-            backgroundColor: '#F44336',
-            borderColor: '#F44336',
-        },
-        reasonButtonText: {
-            fontSize: 14,
-            color: theme === 'dark' ? '#FFF' : '#333',
-        },
-        reasonButtonTextActive: {
-            color: '#fff',
-            fontWeight: 'bold',
-        },
-        input: {
-            borderWidth: 1,
-            borderColor: theme === 'dark' ? '#555' : '#ddd',
-            borderRadius: 8,
-            padding: 12,
-            fontSize: 16,
-            color: theme === 'dark' ? '#FFF' : '#333',
-            backgroundColor: theme === 'dark' ? '#2A2A2A' : '#fff',
-            marginBottom: 15,
-        },
-        textArea: {
-            height: 80,
-            textAlignVertical: 'top',
-        },
-        modalButtons: {
-            flexDirection: 'row',
-            gap: 10,
-        },
-        modalButton: {
-            flex: 1,
-            paddingVertical: 12,
-            borderRadius: 8,
-            alignItems: 'center',
-        },
-        cancelButton: {
-            backgroundColor: theme === 'dark' ? '#444' : '#e0e0e0',
-        },
-        confirmButton: {
-            backgroundColor: '#4CAF50',
-        },
-        cancelButtonText: {
-            color: theme === 'dark' ? '#FFF' : '#666',
-            fontSize: 16,
-            fontWeight: 'bold',
-        },
-        confirmButtonText: {
-            color: '#fff',
-            fontSize: 16,
-            fontWeight: 'bold',
-        },
-    });
-
-    const renderOrderList = (titleKey: string, list: RestaurantOrder[]) => (
-        <View>
-            <RNText style={dynamicStyles.sectionTitle}>
-                {t(titleKey)} ({list.length})
-            </RNText>
-
-            {list.length === 0 ? (
-                <RNText style={dynamicStyles.emptyText}>
-                    {t('no')} {t(titleKey)?.toLowerCase?.() ?? ""}
-                </RNText>
-            ) : (
-                list.map(order => (
-                    <OrderCard
-                        key={order.id}
-                        order={order}
-                        onAccept={handleAcceptOrder}
-                        onReject={handleRejectOrder}
-                        onStatusChange={(id) => handleStatusChange(id, 'ready_for_pickup')}
-                        onOpenDetails={handleOpenDetails}
-                        onOpenNotes={handleOpenNotes}
-                        styles={dynamicStyles}
-                        t={t}
-                    />
-                ))
+            {/* Actions */}
+            {item.status === 'New' && (
+                <View style={styles.actionsRow}>
+                    <TouchableOpacity
+                        style={[styles.actionBtn, styles.rejectBtn]}
+                        onPress={(e) => {
+                            e.stopPropagation();
+                            handleRejectOrder(item.id);
+                        }}
+                    >
+                        <MaterialIcons name="close" size={18} color="#fff" />
+                        <Text style={styles.actionBtnText}>Reject</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.actionBtn, styles.acceptBtn]}
+                        onPress={(e) => {
+                            e.stopPropagation();
+                            handleAcceptOrder(item.id);
+                        }}
+                    >
+                        <MaterialIcons name="check" size={18} color="#fff" />
+                        <Text style={styles.actionBtnText}>Accept</Text>
+                    </TouchableOpacity>
+                </View>
             )}
-        </View>
+
+            {/* Confirmed status - needs to start preparing */}
+            {item.status === 'Preparing' && item.notes === 'confirmed' && (
+                <TouchableOpacity
+                    style={[styles.actionBtn, styles.preparingBtn]}
+                    onPress={(e) => {
+                        e.stopPropagation();
+                        handleStartPreparing(item.id);
+                    }}
+                >
+                    <MaterialIcons name="restaurant" size={18} color="#fff" />
+                    <Text style={styles.actionBtnText}>Start Preparing</Text>
+                </TouchableOpacity>
+            )}
+
+            {/* Preparing status - can mark as ready */}
+            {item.status === 'Preparing' && item.notes === 'preparing' && (
+                <TouchableOpacity
+                    style={[styles.actionBtn, styles.readyBtn]}
+                    onPress={(e) => {
+                        e.stopPropagation();
+                        handleMarkReady(item.id);
+                    }}
+                >
+                    <MaterialIcons name="done-all" size={18} color="#fff" />
+                    <Text style={styles.actionBtnText}>Mark Ready</Text>
+                </TouchableOpacity>
+            )}
+
+            {/* Ready status - waiting for pickup */}
+            {item.status === 'Ready' && (
+                <View style={styles.readyBadge}>
+                    <MaterialCommunityIcons name="check-circle" size={18} color="#4CAF50" />
+                    <Text style={[styles.readyText, { color: isDark ? '#4CAF50' : '#2E7D32' }]}>
+                        Ready for Pickup
+                    </Text>
+                </View>
+            )}
+        </TouchableOpacity>
     );
 
     return (
-        <View style={dynamicStyles.container}>
-            <AppHeader title={t("order_management")} showBack={false} />
+        <View style={[styles.container, { backgroundColor: isDark ? '#121212' : '#F5F5F5' }]}>
+            {/* Header */}
+            <View style={[styles.header, { backgroundColor: isDark ? '#1E1E1E' : '#fff' }]}>
+                <Text style={[styles.headerTitle, { color: isDark ? '#FFF' : '#000' }]}>Orders</Text>
+            </View>
 
-            <ScrollView
-                style={dynamicStyles.content}
-                refreshControl={
-                    <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+            {/* Tabs */}
+            <View style={[styles.tabsContainer, { backgroundColor: isDark ? '#1E1E1E' : '#fff' }]}>
+                <TouchableOpacity
+                    style={[styles.tab, activeTab === 'pending' && styles.activeTab]}
+                    onPress={() => setActiveTab('pending')}
+                >
+                    <Text style={[styles.tabText, activeTab === 'pending' && styles.activeTabText]}>
+                        Pending ({pendingOrders.length})
+                    </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={[styles.tab, activeTab === 'active' && styles.activeTab]}
+                    onPress={() => setActiveTab('active')}
+                >
+                    <Text style={[styles.tabText, activeTab === 'active' && styles.activeTabText]}>
+                        Active ({activeOrders.length})
+                    </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={[styles.tab, activeTab === 'history' && styles.activeTab]}
+                    onPress={() => setActiveTab('history')}
+                >
+                    <Text style={[styles.tabText, activeTab === 'history' && styles.activeTabText]}>History</Text>
+                </TouchableOpacity>
+            </View>
+
+            {/* Orders List */}
+            <FlatList
+                data={displayOrders}
+                renderItem={renderOrderCard}
+                keyExtractor={(item) => item.id}
+                contentContainerStyle={styles.listContent}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
+                ListEmptyComponent={
+                    <View style={styles.emptyContainer}>
+                        <MaterialCommunityIcons name="clipboard-text-outline" size={64} color="#CCC" />
+                        <Text style={[styles.emptyText, { color: isDark ? '#AAA' : '#999' }]}>No orders found</Text>
+                    </View>
                 }
-            >
-                {renderOrderList('new_orders_section', newOrders)}
-                {renderOrderList('active_orders_section', activeOrdersMapped)}
-                {renderOrderList('completed_orders_section', completedOrdersMapped)}
+            />
 
-                <View style={{ height: 50 }} />
-            </ScrollView>
+            {/* Accept Modal */}
+            <Modal visible={showAcceptModal} transparent animationType="slide">
+                <View style={styles.modalOverlay}>
+                    <View style={[styles.modalContent, { backgroundColor: isDark ? '#1E1E1E' : '#fff' }]}>
+                        <Text style={[styles.modalTitle, { color: isDark ? '#FFF' : '#000' }]}>Accept Order</Text>
+                        <Text style={[styles.modalLabel, { color: isDark ? '#BBB' : '#666' }]}>Preparation Time (minutes)</Text>
 
-            {/* Accept Order Modal */}
-            <Modal
-                visible={showAcceptModal}
-                transparent
-                animationType="slide"
-                onRequestClose={() => setShowAcceptModal(false)}
-            >
-                <View style={dynamicStyles.modalOverlay}>
-                    <View style={dynamicStyles.modalContent}>
-                        <RNText style={dynamicStyles.modalTitle}>{t('accept_order')}</RNText>
-                        <RNText style={dynamicStyles.modalLabel}>{t('preparation_time')} (minutes):</RNText>
-
-                        <View style={dynamicStyles.prepTimeButtons}>
+                        <View style={styles.prepTimeButtons}>
                             {['15', '20', '30', '45'].map((time) => (
                                 <TouchableOpacity
                                     key={time}
                                     style={[
-                                        dynamicStyles.prepTimeButton,
-                                        prepTime === time && dynamicStyles.prepTimeButtonActive
+                                        styles.prepTimeBtn,
+                                        { borderColor: isDark ? '#555' : '#DDD', backgroundColor: isDark ? '#2A2A2A' : '#F5F5F5' },
+                                        prepTime === time && styles.prepTimeBtnActive,
                                     ]}
                                     onPress={() => setPrepTime(time)}
                                 >
-                                    <RNText style={[
-                                        dynamicStyles.prepTimeButtonText,
-                                        prepTime === time && dynamicStyles.prepTimeButtonTextActive
-                                    ]}>{time} min</RNText>
+                                    <Text
+                                        style={[
+                                            styles.prepTimeBtnText,
+                                            { color: isDark ? '#FFF' : '#333' },
+                                            prepTime === time && styles.prepTimeBtnTextActive,
+                                        ]}
+                                    >
+                                        {time} min
+                                    </Text>
                                 </TouchableOpacity>
                             ))}
                         </View>
 
                         <TextInput
-                            style={dynamicStyles.input}
+                            style={[
+                                styles.input,
+                                { borderColor: isDark ? '#555' : '#DDD', backgroundColor: isDark ? '#2A2A2A' : '#fff', color: isDark ? '#FFF' : '#000' },
+                            ]}
                             value={prepTime}
                             onChangeText={setPrepTime}
                             keyboardType="numeric"
                             placeholder="Custom time"
-                            placeholderTextColor={theme === 'dark' ? '#888' : '#999'}
+                            placeholderTextColor={isDark ? '#888' : '#999'}
                         />
 
-                        <View style={dynamicStyles.modalButtons}>
+                        <View style={styles.modalButtons}>
                             <TouchableOpacity
-                                style={[dynamicStyles.modalButton, dynamicStyles.cancelButton]}
+                                style={[styles.modalBtn, { backgroundColor: isDark ? '#444' : '#E0E0E0' }]}
                                 onPress={() => setShowAcceptModal(false)}
                             >
-                                <RNText style={dynamicStyles.cancelButtonText}>{t('cancel')}</RNText>
+                                <Text style={{ color: isDark ? '#FFF' : '#666', fontWeight: '600' }}>Cancel</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[dynamicStyles.modalButton, dynamicStyles.confirmButton]}
-                                onPress={confirmAcceptOrder}
-                            >
-                                <RNText style={dynamicStyles.confirmButtonText}>{t('confirm')}</RNText>
+                            <TouchableOpacity style={[styles.modalBtn, { backgroundColor: '#4CAF50' }]} onPress={confirmAcceptOrder}>
+                                <Text style={{ color: '#fff', fontWeight: '600' }}>Confirm</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
                 </View>
             </Modal>
 
-            {/* Reject Order Modal */}
-            <Modal
-                visible={showRejectModal}
-                transparent
-                animationType="slide"
-                onRequestClose={() => setShowRejectModal(false)}
-            >
-                <View style={dynamicStyles.modalOverlay}>
-                    <View style={dynamicStyles.modalContent}>
-                        <RNText style={dynamicStyles.modalTitle}>{t('reject_order')}</RNText>
-                        <RNText style={dynamicStyles.modalLabel}>{t('rejection_reason')}:</RNText>
+            {/* Reject Modal */}
+            <Modal visible={showRejectModal} transparent animationType="slide">
+                <View style={styles.modalOverlay}>
+                    <View style={[styles.modalContent, { backgroundColor: isDark ? '#1E1E1E' : '#fff' }]}>
+                        <Text style={[styles.modalTitle, { color: isDark ? '#FFF' : '#000' }]}>Reject Order</Text>
+                        <Text style={[styles.modalLabel, { color: isDark ? '#BBB' : '#666' }]}>Rejection Reason</Text>
 
-                        <View style={dynamicStyles.reasonButtons}>
+                        <View style={styles.reasonButtons}>
                             {['Out of stock', 'Too busy', 'Closing soon', 'Other'].map((reason) => (
                                 <TouchableOpacity
                                     key={reason}
                                     style={[
-                                        dynamicStyles.reasonButton,
-                                        rejectReason === reason && dynamicStyles.reasonButtonActive
+                                        styles.reasonBtn,
+                                        { borderColor: isDark ? '#555' : '#DDD', backgroundColor: isDark ? '#2A2A2A' : '#F5F5F5' },
+                                        rejectReason === reason && styles.reasonBtnActive,
                                     ]}
                                     onPress={() => setRejectReason(reason)}
                                 >
-                                    <RNText style={[
-                                        dynamicStyles.reasonButtonText,
-                                        rejectReason === reason && dynamicStyles.reasonButtonTextActive
-                                    ]}>{reason}</RNText>
+                                    <Text
+                                        style={[
+                                            styles.reasonBtnText,
+                                            { color: isDark ? '#FFF' : '#333' },
+                                            rejectReason === reason && styles.reasonBtnTextActive,
+                                        ]}
+                                    >
+                                        {reason}
+                                    </Text>
                                 </TouchableOpacity>
                             ))}
                         </View>
 
                         <TextInput
-                            style={[dynamicStyles.input, dynamicStyles.textArea]}
+                            style={[
+                                styles.input,
+                                styles.textArea,
+                                { borderColor: isDark ? '#555' : '#DDD', backgroundColor: isDark ? '#2A2A2A' : '#fff', color: isDark ? '#FFF' : '#000' },
+                            ]}
                             value={rejectReason}
                             onChangeText={setRejectReason}
                             placeholder="Enter custom reason"
-                            placeholderTextColor={theme === 'dark' ? '#888' : '#999'}
+                            placeholderTextColor={isDark ? '#888' : '#999'}
                             multiline
                             numberOfLines={3}
                         />
 
-                        <View style={dynamicStyles.modalButtons}>
+                        <View style={styles.modalButtons}>
                             <TouchableOpacity
-                                style={[dynamicStyles.modalButton, dynamicStyles.cancelButton]}
+                                style={[styles.modalBtn, { backgroundColor: isDark ? '#444' : '#E0E0E0' }]}
                                 onPress={() => setShowRejectModal(false)}
                             >
-                                <RNText style={dynamicStyles.cancelButtonText}>{t('cancel')}</RNText>
+                                <Text style={{ color: isDark ? '#FFF' : '#666', fontWeight: '600' }}>Cancel</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[dynamicStyles.modalButton, dynamicStyles.confirmButton, { backgroundColor: '#F44336' }]}
-                                onPress={confirmRejectOrder}
-                            >
-                                <RNText style={dynamicStyles.confirmButtonText}>{t('confirm')}</RNText>
+                            <TouchableOpacity style={[styles.modalBtn, { backgroundColor: '#F44336' }]} onPress={confirmRejectOrder}>
+                                <Text style={{ color: '#fff', fontWeight: '600' }}>Confirm</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -642,3 +471,251 @@ export default function OrderManagementScreen() {
         </View>
     );
 }
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+    },
+    header: {
+        paddingHorizontal: 20,
+        paddingVertical: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: '#E0E0E0',
+    },
+    headerTitle: {
+        fontSize: 24,
+        fontWeight: 'bold',
+    },
+    tabsContainer: {
+        flexDirection: 'row',
+        borderBottomWidth: 1,
+        borderBottomColor: '#E0E0E0',
+    },
+    tab: {
+        flex: 1,
+        paddingVertical: 16,
+        alignItems: 'center',
+    },
+    activeTab: {
+        borderBottomWidth: 3,
+        borderBottomColor: '#FF6B35',
+    },
+    tabText: {
+        fontSize: 14,
+        color: '#999',
+        fontWeight: '500',
+    },
+    activeTabText: {
+        color: '#FF6B35',
+        fontWeight: '700',
+    },
+    listContent: {
+        padding: 16,
+    },
+    card: {
+        borderRadius: 12,
+        padding: 16,
+        marginBottom: 12,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+    },
+    cardHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    orderId: {
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    statusBadge: {
+        paddingHorizontal: 12,
+        paddingVertical: 4,
+        borderRadius: 12,
+    },
+    statusText: {
+        color: '#fff',
+        fontSize: 12,
+        fontWeight: '600',
+    },
+    infoRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 8,
+        gap: 8,
+    },
+    infoText: {
+        fontSize: 14,
+    },
+    itemsSection: {
+        marginVertical: 8,
+        paddingVertical: 8,
+        borderTopWidth: 1,
+        borderTopColor: '#F0F0F0',
+    },
+    itemText: {
+        fontSize: 13,
+        marginBottom: 4,
+    },
+    totalRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginTop: 8,
+        paddingTop: 8,
+        borderTopWidth: 1,
+        borderTopColor: '#F0F0F0',
+    },
+    totalLabel: {
+        fontSize: 14,
+    },
+    totalAmount: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#4CAF50',
+    },
+    actionsRow: {
+        flexDirection: 'row',
+        gap: 8,
+        marginTop: 12,
+    },
+    actionBtn: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 10,
+        borderRadius: 8,
+        gap: 6,
+    },
+    acceptBtn: {
+        backgroundColor: '#4CAF50',
+    },
+    rejectBtn: {
+        backgroundColor: '#F44336',
+    },
+    readyBtn: {
+        backgroundColor: '#2196F3',
+    },
+    preparingBtn: {
+        backgroundColor: '#FF9800',
+    },
+    actionBtnText: {
+        color: '#fff',
+        fontWeight: '600',
+        fontSize: 14,
+    },
+    readyBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 10,
+        gap: 8,
+    },
+    readyText: {
+        fontSize: 14,
+        fontWeight: '600',
+    },
+    emptyContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 60,
+    },
+    emptyText: {
+        fontSize: 16,
+        marginTop: 16,
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalContent: {
+        borderRadius: 16,
+        padding: 24,
+        width: '85%',
+        maxWidth: 400,
+    },
+    modalTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        marginBottom: 16,
+        textAlign: 'center',
+    },
+    modalLabel: {
+        fontSize: 14,
+        marginBottom: 12,
+    },
+    prepTimeButtons: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 8,
+        marginBottom: 16,
+    },
+    prepTimeBtn: {
+        paddingVertical: 10,
+        paddingHorizontal: 16,
+        borderRadius: 8,
+        borderWidth: 1,
+    },
+    prepTimeBtnActive: {
+        backgroundColor: '#4CAF50',
+        borderColor: '#4CAF50',
+    },
+    prepTimeBtnText: {
+        fontSize: 14,
+    },
+    prepTimeBtnTextActive: {
+        color: '#fff',
+        fontWeight: 'bold',
+    },
+    reasonButtons: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 8,
+        marginBottom: 16,
+    },
+    reasonBtn: {
+        paddingVertical: 10,
+        paddingHorizontal: 16,
+        borderRadius: 8,
+        borderWidth: 1,
+    },
+    reasonBtnActive: {
+        backgroundColor: '#F44336',
+        borderColor: '#F44336',
+    },
+    reasonBtnText: {
+        fontSize: 14,
+    },
+    reasonBtnTextActive: {
+        color: '#fff',
+        fontWeight: 'bold',
+    },
+    input: {
+        borderWidth: 1,
+        borderRadius: 8,
+        padding: 12,
+        fontSize: 16,
+        marginBottom: 16,
+    },
+    textArea: {
+        height: 80,
+        textAlignVertical: 'top',
+    },
+    modalButtons: {
+        flexDirection: 'row',
+        gap: 12,
+    },
+    modalBtn: {
+        flex: 1,
+        paddingVertical: 12,
+        borderRadius: 8,
+        alignItems: 'center',
+    },
+});
