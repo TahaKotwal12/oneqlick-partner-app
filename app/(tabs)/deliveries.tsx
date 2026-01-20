@@ -12,6 +12,7 @@ import {
 import { Text } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useDeliveryOrderStore } from '../../store/deliveryOrderStore';
@@ -33,6 +34,7 @@ export default function DeliveryDashboardScreen() {
         fetchActiveDeliveries,
         fetchEarnings,
         toggleOnlineStatus,
+        setCurrentLocation,
         acceptDelivery,
         refreshAll,
     } = useDeliveryOrderStore();
@@ -40,6 +42,7 @@ export default function DeliveryDashboardScreen() {
     // Local state
     const [activeTab, setActiveTab] = useState<'available' | 'active' | 'completed'>('available');
     const [refreshing, setRefreshing] = useState(false);
+    const [locationLoading, setLocationLoading] = useState(false);
 
     // Fetch data on mount
     useEffect(() => {
@@ -58,16 +61,40 @@ export default function DeliveryDashboardScreen() {
     };
 
     // Handle toggle online status
-    const handleToggleOnline = () => {
+    const handleToggleOnline = async () => {
         if (!isOnline) {
-            Alert.alert(
-                'Go Online',
-                'You will start receiving delivery requests',
-                [
-                    { text: 'Cancel', style: 'cancel' },
-                    { text: 'Go Online', onPress: toggleOnlineStatus },
-                ]
-            );
+            // Request location permission before going online
+            setLocationLoading(true);
+            try {
+                const { status } = await Location.requestForegroundPermissionsAsync();
+
+                if (status !== 'granted') {
+                    setLocationLoading(false);
+                    Alert.alert(
+                        'Location Permission Required',
+                        'Please enable location permission to go online and receive delivery requests.'
+                    );
+                    return;
+                }
+
+                // Get current location
+                const location = await Location.getCurrentPositionAsync({
+                    accuracy: Location.Accuracy.High,
+                });
+
+                // Store location
+                setCurrentLocation(location.coords.latitude, location.coords.longitude);
+
+                // Go online
+                toggleOnlineStatus();
+                setLocationLoading(false);
+            } catch (error) {
+                setLocationLoading(false);
+                Alert.alert(
+                    'Location Error',
+                    'Failed to get your location. Please enable location services and try again.'
+                );
+            }
         } else {
             Alert.alert(
                 'Go Offline',
@@ -201,12 +228,13 @@ export default function DeliveryDashboardScreen() {
                     <View style={styles.toggleLeft}>
                         <View style={[styles.statusDot, { backgroundColor: isOnline ? '#4CAF50' : '#999' }]} />
                         <Text style={[styles.statusText2, { color: isDark ? '#FFF' : '#000' }]}>
-                            {isOnline ? 'Online' : 'Offline'}
+                            {locationLoading ? 'Getting location...' : isOnline ? 'Online' : 'Offline'}
                         </Text>
                     </View>
                     <Switch
                         value={isOnline}
                         onValueChange={handleToggleOnline}
+                        disabled={locationLoading}
                         trackColor={{ false: '#767577', true: '#4CAF50' }}
                         thumbColor={isOnline ? '#fff' : '#f4f3f4'}
                     />
