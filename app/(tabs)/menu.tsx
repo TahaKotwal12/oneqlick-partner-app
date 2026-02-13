@@ -6,7 +6,7 @@ import { DesignSystem } from '../../constants/designSystem';
 import { partnerAPI } from '../../services/partnerService';
 import { FoodItem } from '../../types';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useTheme } from '../../contexts/ThemeContext'; 
+import { useTheme } from '../../contexts/ThemeContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -83,7 +83,7 @@ interface NewItemFormData {
     name: string;
     price: string;
     description: string;
-    category_id: string; 
+    category_id: string;
     image_url?: string;
 }
 
@@ -92,7 +92,7 @@ interface ExtendedFoodItem extends FoodItem {
 }
 
 export default function MenuScreen() {
-    const { theme } = useTheme(); 
+    const { theme } = useTheme();
     const { t } = useLanguage();
 
     const [menuItems, setMenuItems] = useState<ExtendedFoodItem[]>([]);
@@ -101,30 +101,34 @@ export default function MenuScreen() {
     const [togglingId, setTogglingId] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
-    
+
     // EDIT ITEM STATE
     const [isEditModalVisible, setIsEditModalVisible] = useState(false);
     const [editingItem, setEditingItem] = useState<ExtendedFoodItem | null>(null);
     const [editModalFormData, setEditModalFormData] = useState({ name: '', price: '0.00', image_url: '' });
-    
+
     // ADD ITEM STATE
     const [isAddModalVisible, setIsAddModalVisible] = useState(false);
-    
+
     // --- WIZARD STATE ---
     const [showWizard, setShowWizard] = useState(true);
     // 0: Select Type, 1: Select Cuisine, 2: Select Dish
-    const [wizardStep, setWizardStep] = useState<0 | 1 | 2>(0); 
+    const [wizardStep, setWizardStep] = useState<0 | 1 | 2>(0);
     const [wizardType, setWizardType] = useState<'veg' | 'nonveg'>('veg');
     const [wizardCuisine, setWizardCuisine] = useState<string>('');
 
-    const [newModalFormData, setNewModalFormData] = useState<NewItemFormData>({ 
-        name: '', 
-        price: '0.00', 
+    const [newModalFormData, setNewModalFormData] = useState<NewItemFormData>({
+        name: '',
+        price: '0.00',
         description: '',
         category_id: '',
         image_url: ''
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // --- CATEGORIES STATE ---
+    const [categories, setCategories] = useState<{ category_id: string; name: string }[]>([]);
+    const [categoriesLoading, setCategoriesLoading] = useState(false);
 
     // --- API CALLS ---
     const fetchMenu = async () => {
@@ -146,8 +150,24 @@ export default function MenuScreen() {
         }
     };
 
+    // Fetch categories on mount
+    const fetchCategories = async () => {
+        try {
+            setCategoriesLoading(true);
+            const response = await partnerAPI.restaurant.getCategories();
+            if (response.success && response.data) {
+                setCategories(response.data);
+            }
+        } catch (error) {
+            console.error('Error fetching categories:', error);
+        } finally {
+            setCategoriesLoading(false);
+        }
+    };
+
     useEffect(() => {
         fetchMenu();
+        fetchCategories();
     }, []);
 
     const onRefresh = () => {
@@ -177,11 +197,11 @@ export default function MenuScreen() {
     // --- HANDLERS ---
     const openEditModal = (item: ExtendedFoodItem) => {
         setEditingItem(item);
-        setEditModalFormData({ 
-            name: item.name, 
+        setEditModalFormData({
+            name: item.name,
             price: item.price.toFixed(2),
-            image_url: item.image_url || '' 
-        }); 
+            image_url: item.image_url || ''
+        });
         setIsEditModalVisible(true);
     };
 
@@ -194,7 +214,7 @@ export default function MenuScreen() {
         if (!editingItem) return;
         const newName = editModalFormData.name.trim();
         const newPrice = parseFloat(editModalFormData.price);
-        
+
         if (!newName || isNaN(newPrice) || newPrice < 0) {
             Alert.alert(t('invalid_input'), t('valid_name_price_required'));
             return;
@@ -203,7 +223,7 @@ export default function MenuScreen() {
         LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
         setMenuItems(prev => prev.map(item =>
             item.food_item_id === editingItem.food_item_id
-                ? { ...item, name: newName, price: newPrice, image_url: editModalFormData.image_url } 
+                ? { ...item, name: newName, price: newPrice, image_url: editModalFormData.image_url }
                 : item
         ));
         closeEditModal();
@@ -227,12 +247,12 @@ export default function MenuScreen() {
 
                             // 2. Actual API Call
                             if (partnerAPI.restaurant.deleteMenuItem) {
-                                await partnerAPI.restaurant.deleteMenuItem(item.food_item_id); 
+                                await partnerAPI.restaurant.deleteMenuItem(item.food_item_id);
                             }
                         } catch (error) {
                             console.error("Delete failed", error);
                             // Only fetch menu if it failed, to restore item
-                            fetchMenu(); 
+                            fetchMenu();
                             Alert.alert("Error", "Could not delete item from server");
                         }
                     }
@@ -240,17 +260,17 @@ export default function MenuScreen() {
             ]
         );
     };
-    
+
     const openAddModal = () => {
-        setNewModalFormData({ 
-            name: '', 
-            price: '0.00', 
+        setNewModalFormData({
+            name: '',
+            price: '0.00',
             description: '',
             category_id: '',
             image_url: ''
         });
         setShowWizard(true);
-        setWizardStep(0); 
+        setWizardStep(0);
         setIsAddModalVisible(true);
     };
 
@@ -270,22 +290,33 @@ export default function MenuScreen() {
     };
 
     const selectPredefinedDish = (dish: any) => {
+        // Find category UUID by name
+        const categoryName = dish.category;
+        const category = categories.find(c => c.name.toLowerCase() === categoryName.toLowerCase());
+
         setNewModalFormData({
             name: dish.name,
             price: dish.price,
             description: dish.description,
-            category_id: dish.category,
-            image_url: dish.image 
+            category_id: category?.category_id || categoryName, // Use UUID if found, fallback to name
+            image_url: dish.image
         });
-        setShowWizard(false); 
+        setShowWizard(false);
     };
 
     const selectCustomOption = (category?: string) => {
+        // Find category UUID by name if category provided
+        let categoryId = '';
+        if (category) {
+            const foundCategory = categories.find(c => c.name.toLowerCase() === category.toLowerCase());
+            categoryId = foundCategory?.category_id || category;
+        }
+
         setNewModalFormData({
             name: '',
             price: '',
             description: '',
-            category_id: category || '', 
+            category_id: categoryId,
             image_url: ''
         });
         setShowWizard(false);
@@ -297,7 +328,7 @@ export default function MenuScreen() {
         const newName = name.trim();
         const newPrice = parseFloat(price);
         const newCategoryId = category_id.trim();
-        
+
         if (!newName || isNaN(newPrice) || newPrice <= 0 || !newCategoryId) {
             Alert.alert(t('invalid_input'), t('valid_details_required'));
             return;
@@ -310,37 +341,37 @@ export default function MenuScreen() {
                 price: newPrice,
                 description,
                 category_id: newCategoryId,
-                image_url: image_url 
+                image_url: image_url
             };
-            
-            const response = await partnerAPI.restaurant.createMenuItem(newItemData); 
-            
+
+            const response = await partnerAPI.restaurant.createMenuItem(newItemData);
+
             if (response.success) {
                 Alert.alert(t('success'), t('item_added_successfully'));
-                
+
                 // --- FIX: LOCAL UPDATE & UNIQUE KEY GENERATION ---
                 // We create a unique ID by combining the response ID (or random) with a timestamp
                 // to prevent the "same key" error if the API returns duplicate IDs.
-                const uniqueId = response.data?.food_item_id 
-                    ? `${response.data.food_item_id}_${Date.now()}` 
+                const uniqueId = response.data?.food_item_id
+                    ? `${response.data.food_item_id}_${Date.now()}`
                     : Date.now().toString();
 
                 const createdItem: ExtendedFoodItem = {
-                    food_item_id: uniqueId, 
-                    restaurant_id: 'current_user',
+                    food_item_id: uniqueId,
                     name: newName,
                     price: newPrice,
                     description: description,
                     category_id: newCategoryId,
                     is_available: true,
                     is_veg: true, // simplified for now
+                    image: image_url || '',
                     image_url: image_url,
                     is_popular: false
                 };
 
                 LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
                 setMenuItems(prev => [...prev, createdItem]);
-                
+
                 closeAddModal();
             } else {
                 Alert.alert(t('error'), response.error || t('failed_add_item'));
@@ -381,7 +412,7 @@ export default function MenuScreen() {
         itemListImage: { width: 70, height: 70, borderRadius: 8, backgroundColor: '#eee', marginRight: 16 },
         itemInfo: { flex: 1, marginRight: 12 },
         itemHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
-        editButtonContainer: { marginRight: 12, padding: 4, flexDirection: 'row', gap: 12 }, 
+        editButtonContainer: { marginRight: 12, padding: 4, flexDirection: 'row', gap: 12 },
         itemName: { fontSize: 16, fontWeight: 'bold', color: theme === 'dark' ? '#FFFFFF' : DesignSystem.colors.text.primary, flex: 1 },
         itemDescription: { fontSize: 13, color: theme === 'dark' ? '#AAA' : DesignSystem.colors.text.secondary, marginBottom: 8, lineHeight: 18 },
         itemMeta: { flexDirection: 'row', alignItems: 'center', gap: 8 },
@@ -462,7 +493,7 @@ export default function MenuScreen() {
                     <Image source={{ uri: item.image_url }} style={dynamicStyles.itemListImage} />
                 ) : (
                     <View style={dynamicStyles.itemListImage}>
-                         <MaterialCommunityIcons name="food" size={30} color="#ccc" style={{ alignSelf: 'center', marginTop: 20 }} />
+                        <MaterialCommunityIcons name="food" size={30} color="#ccc" style={{ alignSelf: 'center', marginTop: 20 }} />
                     </View>
                 )}
                 <View style={dynamicStyles.itemInfo}>
@@ -480,7 +511,7 @@ export default function MenuScreen() {
                     </View>
                     {item.description && <Text style={dynamicStyles.itemDescription} numberOfLines={2}>{item.description}</Text>}
                     <View style={dynamicStyles.itemMeta}>
-                        <Text style={dynamicStyles.itemPrice}>₹{item.price.toFixed(2)}</Text>
+                        <Text style={dynamicStyles.itemPrice}>₹{Number(item.price || 0).toFixed(2)}</Text>
                         {item.is_popular && <Chip icon="star" style={dynamicStyles.popularChip} textStyle={dynamicStyles.popularText} compact>{t('popular')}</Chip>}
                     </View>
                 </View>
@@ -548,7 +579,7 @@ export default function MenuScreen() {
                 )}
             </ScrollView>
             <FAB icon="plus" style={dynamicStyles.fab} onPress={openAddModal} label={t('add_item')} color="white" />
-            
+
             {/* EDIT MODAL */}
             <Portal>
                 <Modal visible={isEditModalVisible} onDismiss={closeEditModal} contentContainerStyle={dynamicStyles.modalContent}>
@@ -572,7 +603,7 @@ export default function MenuScreen() {
                     </View>
                 </Modal>
             </Portal>
-            
+
             {/* ADD MODAL - UPDATED 3-STEP WIZARD */}
             <Portal>
                 <Modal visible={isAddModalVisible} onDismiss={closeAddModal} contentContainerStyle={dynamicStyles.modalContent}>
@@ -585,12 +616,12 @@ export default function MenuScreen() {
                                         <Text style={dynamicStyles.modalTitle}>Select Food Type</Text>
                                         <View style={dynamicStyles.wizardTypeContainer}>
                                             <TouchableOpacity style={dynamicStyles.wizardTypeButton} onPress={() => handleTypeSelection('veg')}>
-                                                <MaterialCommunityIcons name="leaf" size={24} color={DesignSystem.colors.success} style={{marginBottom: 8}} />
-                                                <Text style={[dynamicStyles.wizardTypeText, {color: DesignSystem.colors.success}]}>PURE VEG</Text>
+                                                <MaterialCommunityIcons name="leaf" size={24} color={DesignSystem.colors.success} style={{ marginBottom: 8 }} />
+                                                <Text style={[dynamicStyles.wizardTypeText, { color: DesignSystem.colors.success }]}>PURE VEG</Text>
                                             </TouchableOpacity>
                                             <TouchableOpacity style={dynamicStyles.wizardTypeButton} onPress={() => handleTypeSelection('nonveg')}>
-                                                <MaterialCommunityIcons name="food-drumstick" size={24} color={DesignSystem.colors.error} style={{marginBottom: 8}} />
-                                                <Text style={[dynamicStyles.wizardTypeText, {color: DesignSystem.colors.error}]}>NON-VEG</Text>
+                                                <MaterialCommunityIcons name="food-drumstick" size={24} color={DesignSystem.colors.error} style={{ marginBottom: 8 }} />
+                                                <Text style={[dynamicStyles.wizardTypeText, { color: DesignSystem.colors.error }]}>NON-VEG</Text>
                                             </TouchableOpacity>
                                             <Button mode="outlined" onPress={() => selectCustomOption()} style={dynamicStyles.otherOptionButton} icon="pencil-plus">Skip to Custom Order</Button>
                                         </View>
@@ -632,7 +663,7 @@ export default function MenuScreen() {
                                                     <Text style={dynamicStyles.dishPrice}>₹{dish.price}</Text>
                                                 </TouchableOpacity>
                                             ))}
-                                            
+
                                             {/* ADD CUSTOM BUTTON IN EVERY CUISINE */}
                                             <TouchableOpacity style={dynamicStyles.addCustomCard} onPress={() => selectCustomOption(wizardCuisine)}>
                                                 <MaterialCommunityIcons name="plus-circle-outline" size={32} color={DesignSystem.colors.primary[600]} />

@@ -156,10 +156,19 @@ export const partnerAPI = {
                     total_count: number;
                 }>('/partner/restaurant/menu', true);
 
+                console.log('📋 Menu API Response:', JSON.stringify(response, null, 2));
+
                 if (response.success && response.data) {
+                    console.log('✅ Menu items received:', response.data.items?.length || 0);
+
+                    // Log first item to debug structure
+                    if (response.data.items && response.data.items.length > 0) {
+                        console.log('🔍 First menu item:', JSON.stringify(response.data.items[0], null, 2));
+                    }
+
                     return {
                         success: true,
-                        data: response.data.items,
+                        data: response.data.items || [],
                         statusCode: 200,
                     };
                 }
@@ -170,6 +179,7 @@ export const partnerAPI = {
                     statusCode: response.statusCode || 400,
                 };
             } catch (error) {
+                console.error('❌ Get menu error:', error);
                 return {
                     success: false,
                     error: error instanceof Error ? error.message : 'Failed to fetch menu',
@@ -356,6 +366,38 @@ export const partnerAPI = {
                 return {
                     success: false,
                     error: error instanceof Error ? error.message : 'Failed to fetch earnings',
+                    statusCode: 500,
+                };
+            }
+        },
+
+        /**
+         * Get categories
+         */
+        getCategories: async (): Promise<ApiResponse<{ category_id: string; name: string; description?: string }[]>> => {
+            try {
+                const response = await apiClient.get<{
+                    categories: { category_id: string; name: string; description?: string; is_active: boolean }[];
+                    total_count: number;
+                }>('/partner/restaurant/menu/categories', true);
+
+                if (response.success && response.data) {
+                    return {
+                        success: true,
+                        data: response.data.categories,
+                        statusCode: 200,
+                    };
+                }
+
+                return {
+                    success: false,
+                    error: response.error || 'Failed to fetch categories',
+                    statusCode: response.statusCode || 400,
+                };
+            } catch (error) {
+                return {
+                    success: false,
+                    error: error instanceof Error ? error.message : 'Failed to fetch categories',
                     statusCode: 500,
                 };
             }
