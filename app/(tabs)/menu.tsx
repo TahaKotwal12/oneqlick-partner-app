@@ -14,70 +14,6 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 }
 
 // --- DUMMY DATA ---
-const DUMMY_MENU_DATA = {
-    veg: {
-        'North Indian': [
-            { name: 'Paneer Butter Masala', price: '280', description: 'Cottage cheese in rich tomato gravy', category: 'North Indian', image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR_JfZHtD_jlggLqhDlthd7Jg2o4gt7OrWH7w&s' },
-            { name: 'Dal Makhani', price: '240', description: 'Black lentils cooked overnight with cream', category: 'North Indian', image: 'https://www.pureindianfoods.com/cdn/shop/articles/Dal-Makhani.webp?v=1753479167' },
-            { name: 'Veg Pulao', price: '180', description: 'Basmati rice with mixed vegetables', category: 'Rice', image: 'https://cdn1.foodviva.com/static-content/food-images/rice-recipes/vegetable-pulav-recipe/vegetable-pulav-recipe.jpg' },
-            { name: 'Palak Paneer', price: '260', description: 'Cottage cheese cubes in spinach gravy', category: 'North Indian', image: 'https://www.chefajaychopra.com/assets/img/recipe/1-1666433552palakpaneer1webp.webp' },
-            { name: 'Malai Kofta', price: '290', description: 'Fried dumplings in creamy cashew curry', category: 'North Indian', image: 'https://carveyourcraving.com/wp-content/uploads/2021/09/Best-Malai-Kofta-recipe.jpg' }
-        ],
-        'South Indian': [
-            { name: 'Masala Dosa', price: '120', description: 'Fermented crepe stuffed with potato masala', category: 'South Indian', image: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=200' },
-            { name: 'Idli Sambar', price: '80', description: 'Steamed rice cakes with lentil soup', category: 'South Indian', image: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=200' },
-            { name: 'Uttapam', price: '110', description: 'Thick pancake with onion and tomato toppings', category: 'South Indian', image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSW9tmanikEhiMSQxYM8Z_csTGqT_VRXTaKRQ&s' }
-        ],
-        'Chinese': [
-            { name: 'Veg Hakka Noodles', price: '180', description: 'Stir fried noodles with fresh veggies', category: 'Chinese', image: 'https://www.whiskaffair.com/wp-content/uploads/2020/10/Veg-Hakka-Noodles-2-3.jpg' },
-            { name: 'Veg Manchurian', price: '200', description: 'Fried veg balls in spicy soya sauce', category: 'Chinese', image: 'https://www.temptingtreat.com/wp-content/uploads/2025/02/manchurian-with-product-p1-2.jpg' },
-            { name: 'Chilli Paneer', price: '220', description: 'Spicy cottage cheese with capsicum', category: 'Chinese', image: 'https://spicecravings.com/wp-content/uploads/2022/01/Chilli-Paneer-Featured-2.jpg' }
-        ],
-        'Italian': [
-            { name: 'Margherita Pizza', price: '250', description: 'Classic cheese and tomato pizza', category: 'Italian', image: 'https://www.vindulge.com/wp-content/uploads/2022/05/Margherita-Pizza.jpg' },
-            { name: 'White Sauce Pasta', price: '220', description: 'Penne pasta in creamy cheesy sauce', category: 'Italian', image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcShJfb84jTT1S20AWnMLWvUrmc_ZGPsbv5afw&s' },
-            { name: 'Farmhouse Pizza', price: '300', description: 'Loaded with onion, capsicum, corn and mushroom', category: 'Italian', image: 'https://media-assets.swiggy.com/swiggy/image/upload/f_auto,q_auto,fl_lossy/f9701b4e9e6aae4febe5e52c9f5e36f9' }
-        ],
-        'Starters': [
-            { name: 'Paneer Tikka', price: '220', description: 'Grilled spiced cottage cheese chunks', category: 'Starters', image: 'https://lentillovingfamily.com/wp-content/uploads/2025/08/paneer-tikka-2.jpg' },
-            { name: 'Hara Bhara Kebab', price: '180', description: 'Spiced patties made of spinach and peas', category: 'Starters', image: 'https://www.vegrecipesofindia.com/wp-content/uploads/2013/01/hara-bhara-kabab-recipe-1-500x500.jpg' }
-        ],
-        'Desserts': [
-            { name: 'Gulab Jamun', price: '80', description: 'Fried milk solids soaked in sugar syrup', category: 'Desserts', image: 'https://i0.wp.com/www.chitrasfoodbook.com/wp-content/uploads/2016/10/gulab-jamun-using-mix.jpg?w=1200&ssl=1' },
-            { name: 'Rasmalai', price: '100', description: 'Cottage cheese balls in thickened milk', category: 'Desserts', image: 'https://palatesdesire.com/wp-content/uploads/2022/09/Rasmalai-recipe@palates-desire.jpg' }
-        ],
-        'Beverages': [
-            { name: 'Sweet Lassi', price: '60', description: 'Traditional yogurt drink', category: 'Beverages', image: 'https://shwetainthekitchen.com/wp-content/uploads/2021/05/Sweet-lassi.jpg' },
-            { name: 'Mango Shake', price: '90', description: 'Fresh mango blended with milk', category: 'Beverages', image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTJjT7cbdKqsDepmmVNRtCnxozaB00TqaUm7Q&s' }
-        ]
-    },
-    nonveg: {
-        'North Indian': [
-            { name: 'Chicken Curry', price: '300', description: 'Chicken cooked in home style gravy', category: 'North Indian', image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTSRE6HXKNaIL-MGPXmIMJ5LggXy6_fEXF_Dw&s' },
-            { name: 'Mutton Rogan Josh', price: '450', description: 'Aromatic lamb curry from Kashmir', category: 'North Indian', image: 'https://static.toiimg.com/thumb/53192600.cms?imgsize=418831&width=800&height=800' }
-        ],
-        'Mughlai': [
-            { name: 'Chicken Biryani', price: '350', description: 'Aromatic rice layered with spiced chicken', category: 'Biryani', image: 'https://ministryofcurry.com/wp-content/uploads/2024/06/chicken-biryani-5.jpg' },
-            { name: 'Butter Chicken', price: '320', description: 'Chicken in creamy tomato curry', category: 'Main Course', image: 'https://www.indianhealthyrecipes.com/wp-content/uploads/2023/04/butter-chicken-recipe.jpg' },
-            { name: 'Mutton Biryani', price: '400', description: 'Spiced rice with tender mutton pieces', category: 'Biryani', image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRDdi19ANtwkkDvVsAC-yiALAtFermChxjmdA&s' }
-        ],
-        'Chinese': [
-            { name: 'Chicken Fried Rice', price: '250', description: 'Wok tossed rice with chicken and egg', category: 'Chinese', image: 'https://nishkitchen.com/wp-content/uploads/2015/11/Indo-Chinese-Chicken-Fried-Rice-2B.jpg' },
-            { name: 'Chilli Chicken', price: '280', description: 'Batter fried chicken in spicy sauce', category: 'Chinese', image: 'https://pupswithchopsticks.com/wp-content/uploads/chilli-chicken-thumbnail.jpg' },
-            { name: 'Chicken Hakka Noodles', price: '240', description: 'Noodles stir fried with chicken strips', category: 'Chinese', image: 'https://www.cubesnjuliennes.com/wp-content/uploads/2020/06/Spicy-Chicken-Hakka-Noodles-Recipe.jpg' }
-        ],
-        'Italian': [
-            { name: 'Pepperoni Pizza', price: '350', description: 'Classic pizza with pepperoni slices', category: 'Italian', image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQoYWUM5Lpw8wwHe5aK6e9R4o1OOwI4XRsPLg&s' },
-            { name: 'Chicken Pasta', price: '280', description: 'Pasta with grilled chicken in red sauce', category: 'Italian', image: 'https://dishingouthealth.com/wp-content/uploads/2025/02/CreamyLemonChickenPasta_Square-1.jpg' },
-            { name: 'BBQ Chicken Pizza', price: '380', description: 'Pizza topped with bbq chicken and onions', category: 'Italian', image: 'https://damndelicious.net/wp-content/uploads/2021/10/BBQ-Chicken-PizzaIMG_0027edit.jpg' }
-        ],
-        'Starters': [
-            { name: 'Chicken Tikka', price: '280', description: 'Roasted marinated chicken chunks', category: 'Starters', image: 'https://foodfoodonlyfood.wordpress.com/wp-content/uploads/2017/02/img_20240519_155506.jpg' },
-            { name: 'Fish Fry', price: '320', description: 'Crispy fried fish fillets', category: 'Starters', image: 'https://www.thetakeiteasychef.com/wp-content/uploads/2017/12/KFF-FI1-Compressed.jpg' },
-            { name: 'Chicken Wings', price: '250', description: 'Spicy buffalo style chicken wings', category: 'Starters', image: 'https://www.thecookierookie.com/wp-content/uploads/2024/02/bbq-chicken-wings-recipe-featured-image.jpg' }
-        ]
-    }
-};
 
 interface NewItemFormData {
     name: string;
@@ -85,6 +21,7 @@ interface NewItemFormData {
     description: string;
     category_id: string;
     image_url?: string;
+    is_veg: boolean;
 }
 
 interface ExtendedFoodItem extends FoodItem {
@@ -109,22 +46,16 @@ export default function MenuScreen() {
 
     // ADD ITEM STATE
     const [isAddModalVisible, setIsAddModalVisible] = useState(false);
-
-    // --- WIZARD STATE ---
-    const [showWizard, setShowWizard] = useState(true);
-    // 0: Select Type, 1: Select Cuisine, 2: Select Dish
-    const [wizardStep, setWizardStep] = useState<0 | 1 | 2>(0);
-    const [wizardType, setWizardType] = useState<'veg' | 'nonveg'>('veg');
-    const [wizardCuisine, setWizardCuisine] = useState<string>('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const [newModalFormData, setNewModalFormData] = useState<NewItemFormData>({
         name: '',
-        price: '0.00',
+        price: '',
         description: '',
         category_id: '',
-        image_url: ''
+        image_url: '',
+        is_veg: true
     });
-    const [isSubmitting, setIsSubmitting] = useState(false);
 
     // --- CATEGORIES STATE ---
     const [categories, setCategories] = useState<{ category_id: string; name: string }[]>([]);
@@ -264,13 +195,12 @@ export default function MenuScreen() {
     const openAddModal = () => {
         setNewModalFormData({
             name: '',
-            price: '0.00',
+            price: '',
             description: '',
-            category_id: '',
-            image_url: ''
+            category_id: categories.length > 0 ? categories[0].category_id : '',
+            image_url: '',
+            is_veg: true
         });
-        setShowWizard(true);
-        setWizardStep(0);
         setIsAddModalVisible(true);
     };
 
@@ -278,49 +208,6 @@ export default function MenuScreen() {
         setIsAddModalVisible(false);
     };
 
-    // WIZARD NAVIGATION HANDLERS
-    const handleTypeSelection = (type: 'veg' | 'nonveg') => {
-        setWizardType(type);
-        setWizardStep(1); // Go to Cuisine Selection
-    };
-
-    const handleCuisineSelection = (cuisine: string) => {
-        setWizardCuisine(cuisine);
-        setWizardStep(2); // Go to Dish Selection
-    };
-
-    const selectPredefinedDish = (dish: any) => {
-        // Find category UUID by name
-        const categoryName = dish.category;
-        const category = categories.find(c => c.name.toLowerCase() === categoryName.toLowerCase());
-
-        setNewModalFormData({
-            name: dish.name,
-            price: dish.price,
-            description: dish.description,
-            category_id: category?.category_id || categoryName, // Use UUID if found, fallback to name
-            image_url: dish.image
-        });
-        setShowWizard(false);
-    };
-
-    const selectCustomOption = (category?: string) => {
-        // Find category UUID by name if category provided
-        let categoryId = '';
-        if (category) {
-            const foundCategory = categories.find(c => c.name.toLowerCase() === category.toLowerCase());
-            categoryId = foundCategory?.category_id || category;
-        }
-
-        setNewModalFormData({
-            name: '',
-            price: '',
-            description: '',
-            category_id: categoryId,
-            image_url: ''
-        });
-        setShowWizard(false);
-    };
 
     const handleAddSubmit = async () => {
         if (isSubmitting) return;
@@ -341,7 +228,8 @@ export default function MenuScreen() {
                 price: newPrice,
                 description,
                 category_id: newCategoryId,
-                image_url: image_url
+                image_url: image_url,
+                is_veg: newModalFormData.is_veg
             };
 
             const response = await partnerAPI.restaurant.createMenuItem(newItemData);
@@ -363,7 +251,7 @@ export default function MenuScreen() {
                     description: description,
                     category_id: newCategoryId,
                     is_available: true,
-                    is_veg: true, // simplified for now
+                    is_veg: newModalFormData.is_veg,
                     image: image_url || '',
                     image_url: image_url,
                     is_popular: false
@@ -429,27 +317,8 @@ export default function MenuScreen() {
         modalInput: { marginBottom: 15, backgroundColor: theme === 'dark' ? '#292929' : 'white' },
         modalActions: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: 10, gap: 10 },
         saveButton: { minWidth: 120 },
-        wizardTypeContainer: { flexDirection: 'column', gap: 10, marginBottom: 20 },
-        wizardTypeButton: { paddingVertical: 15, alignItems: 'center', borderRadius: 8, borderWidth: 1, borderColor: '#ddd', backgroundColor: theme === 'dark' ? '#292929' : '#fff' },
-        wizardTypeActive: { backgroundColor: theme === 'dark' ? '#444' : '#fff', borderColor: DesignSystem.colors.primary[600] },
-        wizardTypeText: { fontWeight: 'bold', color: theme === 'dark' ? '#AAA' : '#666', fontSize: 16 },
-        wizardTypeTextActive: { color: DesignSystem.colors.primary[600] },
-        cuisineScroll: { marginBottom: 20 },
-        cuisineChip: { marginRight: 8, backgroundColor: theme === 'dark' ? '#292929' : '#f5f5f5' },
-        cuisineChipSelected: { backgroundColor: DesignSystem.colors.primary[100] },
-        dishesGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 20 },
-        dishCard: { width: '48%', backgroundColor: theme === 'dark' ? '#292929' : '#f9f9f9', borderRadius: 12, padding: 10, alignItems: 'center', borderWidth: 1, borderColor: theme === 'dark' ? '#333' : '#eee' },
-        dishImage: { width: 80, height: 80, borderRadius: 40, marginBottom: 8, backgroundColor: '#ddd' },
-        dishName: { fontSize: 14, fontWeight: 'bold', textAlign: 'center', marginBottom: 4, color: theme === 'dark' ? '#FFF' : '#333' },
-        dishPrice: { fontSize: 12, color: DesignSystem.colors.primary[600], fontWeight: 'bold' },
-        otherOptionButton: { marginTop: 10, borderColor: DesignSystem.colors.primary[600], borderWidth: 1 },
-        backToWizardButton: { marginBottom: 15, alignSelf: 'flex-start' },
         customImageContainer: { height: 150, backgroundColor: theme === 'dark' ? '#292929' : '#f0f0f0', borderRadius: 8, justifyContent: 'center', alignItems: 'center', marginBottom: 15, borderWidth: 1, borderColor: theme === 'dark' ? '#444' : '#ddd', borderStyle: 'dashed', overflow: 'hidden' },
         customImageText: { color: theme === 'dark' ? '#888' : '#aaa', marginTop: 8 },
-        addCustomCard: { width: '48%', backgroundColor: theme === 'dark' ? '#292929' : '#f0f8ff', borderRadius: 12, padding: 10, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: DesignSystem.colors.primary[200], borderStyle: 'dashed', minHeight: 150 },
-        addCustomCardText: { color: DesignSystem.colors.primary[600], fontWeight: 'bold', marginTop: 8, textAlign: 'center', fontSize: 13 },
-        cuisineCard: { width: '100%', padding: 15, marginBottom: 10, borderRadius: 10, backgroundColor: theme === 'dark' ? '#292929' : '#f9f9f9', borderWidth: 1, borderColor: theme === 'dark' ? '#444' : '#eee', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-        cuisineCardText: { fontSize: 16, fontWeight: 'bold', color: theme === 'dark' ? '#fff' : '#333' }
     });
 
     // --- DATA TRANSFORMATION LOGIC ---
@@ -608,98 +477,87 @@ export default function MenuScreen() {
             <Portal>
                 <Modal visible={isAddModalVisible} onDismiss={closeAddModal} contentContainerStyle={dynamicStyles.modalContent}>
                     <ScrollView showsVerticalScrollIndicator={false}>
-                        {showWizard ? (
-                            <>
-                                {/* STEP 0: FOOD TYPE SELECTION */}
-                                {wizardStep === 0 && (
-                                    <>
-                                        <Text style={dynamicStyles.modalTitle}>Select Food Type</Text>
-                                        <View style={dynamicStyles.wizardTypeContainer}>
-                                            <TouchableOpacity style={dynamicStyles.wizardTypeButton} onPress={() => handleTypeSelection('veg')}>
-                                                <MaterialCommunityIcons name="leaf" size={24} color={DesignSystem.colors.success} style={{ marginBottom: 8 }} />
-                                                <Text style={[dynamicStyles.wizardTypeText, { color: DesignSystem.colors.success }]}>PURE VEG</Text>
-                                            </TouchableOpacity>
-                                            <TouchableOpacity style={dynamicStyles.wizardTypeButton} onPress={() => handleTypeSelection('nonveg')}>
-                                                <MaterialCommunityIcons name="food-drumstick" size={24} color={DesignSystem.colors.error} style={{ marginBottom: 8 }} />
-                                                <Text style={[dynamicStyles.wizardTypeText, { color: DesignSystem.colors.error }]}>NON-VEG</Text>
-                                            </TouchableOpacity>
-                                            <Button mode="outlined" onPress={() => selectCustomOption()} style={dynamicStyles.otherOptionButton} icon="pencil-plus">Skip to Custom Order</Button>
-                                        </View>
-                                    </>
-                                )}
+                        <>
+                            <Text style={dynamicStyles.modalTitle}>Add New Item</Text>
 
-                                {/* STEP 1: CUISINE SELECTION */}
-                                {wizardStep === 1 && (
-                                    <>
-                                        <TouchableOpacity onPress={() => setWizardStep(0)} style={dynamicStyles.backToWizardButton}>
-                                            <Text style={{ color: DesignSystem.colors.primary[600], fontWeight: 'bold' }}>← Back to Type Selection</Text>
-                                        </TouchableOpacity>
-                                        <Text style={dynamicStyles.modalTitle}>Select Cuisine</Text>
-                                        <View style={{ marginBottom: 20 }}>
-                                            {Object.keys(DUMMY_MENU_DATA[wizardType]).map((cuisine) => (
-                                                <TouchableOpacity key={cuisine} style={dynamicStyles.cuisineCard} onPress={() => handleCuisineSelection(cuisine)}>
-                                                    <Text style={dynamicStyles.cuisineCardText}>{cuisine}</Text>
-                                                    <MaterialCommunityIcons name="chevron-right" size={24} color={DesignSystem.colors.primary[600]} />
-                                                </TouchableOpacity>
-                                            ))}
-                                        </View>
-                                    </>
-                                )}
-
-                                {/* STEP 2: DISH SELECTION */}
-                                {wizardStep === 2 && (
-                                    <>
-                                        <TouchableOpacity onPress={() => setWizardStep(1)} style={dynamicStyles.backToWizardButton}>
-                                            <Text style={{ color: DesignSystem.colors.primary[600], fontWeight: 'bold' }}>← Back to Cuisines</Text>
-                                        </TouchableOpacity>
-
-                                        <Text style={[dynamicStyles.modalTitle, { fontSize: 16 }]}>{wizardCuisine} Dishes</Text>
-                                        <View style={dynamicStyles.dishesGrid}>
-                                            {/* @ts-ignore */}
-                                            {DUMMY_MENU_DATA[wizardType][wizardCuisine]?.map((dish, index) => (
-                                                <TouchableOpacity key={index} style={dynamicStyles.dishCard} onPress={() => selectPredefinedDish(dish)}>
-                                                    <Image source={{ uri: dish.image }} style={dynamicStyles.dishImage} />
-                                                    <Text style={dynamicStyles.dishName}>{dish.name}</Text>
-                                                    <Text style={dynamicStyles.dishPrice}>₹{dish.price}</Text>
-                                                </TouchableOpacity>
-                                            ))}
-
-                                            {/* ADD CUSTOM BUTTON IN EVERY CUISINE */}
-                                            <TouchableOpacity style={dynamicStyles.addCustomCard} onPress={() => selectCustomOption(wizardCuisine)}>
-                                                <MaterialCommunityIcons name="plus-circle-outline" size={32} color={DesignSystem.colors.primary[600]} />
-                                                <Text style={dynamicStyles.addCustomCardText}>Add Custom {wizardCuisine} Item</Text>
-                                            </TouchableOpacity>
-                                        </View>
-                                    </>
-                                )}
-                            </>
-                        ) : (
-                            <>
-                                <TouchableOpacity onPress={() => { setShowWizard(true); setWizardStep(0); }} style={dynamicStyles.backToWizardButton}>
-                                    <Text style={{ color: DesignSystem.colors.primary[600], fontWeight: 'bold' }}>← Start Over</Text>
-                                </TouchableOpacity>
-                                <Text style={dynamicStyles.modalTitle}>Add Item Details</Text>
-                                <View style={dynamicStyles.customImageContainer}>
-                                    {newModalFormData.image_url && newModalFormData.image_url.length > 5 ? (
-                                        <Image source={{ uri: newModalFormData.image_url }} style={{ width: '100%', height: '100%', borderRadius: 8 }} resizeMode="cover" />
-                                    ) : (
-                                        <>
-                                            <MaterialCommunityIcons name="image" size={32} color={theme === 'dark' ? '#555' : '#ccc'} />
-                                            <Text style={dynamicStyles.customImageText}>Preview will appear for valid URLs</Text>
-                                        </>
-                                    )}
+                            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, padding: 10, backgroundColor: theme === 'dark' ? '#292929' : '#f5f5f5', borderRadius: 8 }}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                    <MaterialCommunityIcons
+                                        name={newModalFormData.is_veg ? "leaf" : "food-drumstick"}
+                                        size={24}
+                                        color={newModalFormData.is_veg ? DesignSystem.colors.success : DesignSystem.colors.error}
+                                    />
+                                    <Text style={{ marginLeft: 10, fontWeight: 'bold', color: theme === 'dark' ? '#fff' : '#333' }}>
+                                        {newModalFormData.is_veg ? "Pure Veg" : "Non-Veg"}
+                                    </Text>
                                 </View>
-                                <TextInput label="Image Link (URL)" placeholder="https://example.com/food.jpg" value={newModalFormData.image_url} onChangeText={(text) => setNewModalFormData(p => ({ ...p, image_url: text }))} mode="outlined" style={dynamicStyles.modalInput} autoCapitalize="none" />
-                                <TextInput label={t('item_name')} value={newModalFormData.name} onChangeText={(name) => setNewModalFormData(p => ({ ...p, name }))} mode="outlined" style={dynamicStyles.modalInput} />
-                                <TextInput label={t('price_currency')} value={newModalFormData.price} onChangeText={(price) => setNewModalFormData(p => ({ ...p, price }))} keyboardType="numeric" mode="outlined" style={dynamicStyles.modalInput} />
-                                <TextInput label={t('category_id_label')} value={newModalFormData.category_id} onChangeText={(category_id) => setNewModalFormData(p => ({ ...p, category_id }))} mode="outlined" style={dynamicStyles.modalInput} />
-                                <TextInput label={t('description_optional')} value={newModalFormData.description} onChangeText={(description) => setNewModalFormData(p => ({ ...p, description }))} mode="outlined" multiline numberOfLines={3} style={dynamicStyles.modalInput} />
-                                <View style={dynamicStyles.modalActions}>
-                                    <Button onPress={closeAddModal} mode="outlined" disabled={isSubmitting}>{t('cancel')}</Button>
-                                    <Button onPress={handleAddSubmit} mode="contained" style={dynamicStyles.saveButton} loading={isSubmitting} disabled={isSubmitting}>{t('add_item')}</Button>
-                                </View>
-                            </>
-                        )}
+                                <Switch
+                                    value={newModalFormData.is_veg}
+                                    onValueChange={(val) => setNewModalFormData(p => ({ ...p, is_veg: val }))}
+                                    trackColor={{ false: '#767577', true: DesignSystem.colors.success }}
+                                />
+                            </View>
+
+                            <TextInput
+                                label={t('item_name')}
+                                placeholder="e.g. Paneer Butter Masala"
+                                value={newModalFormData.name}
+                                onChangeText={(name) => setNewModalFormData(p => ({ ...p, name }))}
+                                mode="outlined"
+                                style={dynamicStyles.modalInput}
+                            />
+
+                            <TextInput
+                                label={t('price_currency')}
+                                placeholder="0.00"
+                                value={newModalFormData.price}
+                                onChangeText={(price) => setNewModalFormData(p => ({ ...p, price }))}
+                                keyboardType="numeric"
+                                mode="outlined"
+                                style={dynamicStyles.modalInput}
+                            />
+
+                            <Text style={{ marginBottom: 8, fontWeight: 'bold', fontSize: 13, color: theme === 'dark' ? '#aaa' : '#666' }}>Category</Text>
+                            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 15 }}>
+                                {categories.map((cat) => (
+                                    <Chip
+                                        key={cat.category_id}
+                                        selected={newModalFormData.category_id === cat.category_id}
+                                        onPress={() => setNewModalFormData(p => ({ ...p, category_id: cat.category_id }))}
+                                        style={{ marginRight: 8, backgroundColor: newModalFormData.category_id === cat.category_id ? DesignSystem.colors.primary[100] : (theme === 'dark' ? '#292929' : '#f0f0f0') }}
+                                        textStyle={{ color: newModalFormData.category_id === cat.category_id ? DesignSystem.colors.primary[600] : (theme === 'dark' ? '#fff' : '#333') }}
+                                    >
+                                        {cat.name}
+                                    </Chip>
+                                ))}
+                            </ScrollView>
+
+                            <TextInput
+                                label={t('description_optional')}
+                                placeholder="Short description of the dish"
+                                value={newModalFormData.description}
+                                onChangeText={(description) => setNewModalFormData(p => ({ ...p, description }))}
+                                mode="outlined"
+                                multiline
+                                numberOfLines={2}
+                                style={dynamicStyles.modalInput}
+                            />
+
+                            <TextInput
+                                label="Image URL (Optional)"
+                                placeholder="https://example.com/image.jpg"
+                                value={newModalFormData.image_url}
+                                onChangeText={(image_url) => setNewModalFormData(p => ({ ...p, image_url }))}
+                                mode="outlined"
+                                style={dynamicStyles.modalInput}
+                                autoCapitalize="none"
+                            />
+
+                            <View style={dynamicStyles.modalActions}>
+                                <Button onPress={closeAddModal} mode="outlined" disabled={isSubmitting}>{t('cancel')}</Button>
+                                <Button onPress={handleAddSubmit} mode="contained" style={dynamicStyles.saveButton} loading={isSubmitting} disabled={isSubmitting}>{t('add_item')}</Button>
+                            </View>
+                        </>
                     </ScrollView>
                 </Modal>
             </Portal>
