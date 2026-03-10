@@ -3,7 +3,7 @@ import { View, StyleSheet, ScrollView, RefreshControl, Alert, LayoutAnimation, P
 import { Text, FAB, Switch, ActivityIndicator, Surface, Searchbar, Chip, Modal, Portal, TextInput, Button } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { DesignSystem } from '../../constants/designSystem';
-import { partnerAPI } from '../../services/partnerService';
+import { menuService } from '../../services/menuService';
 import { FoodItem } from '../../types';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -26,6 +26,7 @@ interface NewItemFormData {
 
 interface ExtendedFoodItem extends FoodItem {
     image_url?: string;
+    category_name?: string;
 }
 
 export default function MenuScreen() {
@@ -64,7 +65,7 @@ export default function MenuScreen() {
     // --- API CALLS ---
     const fetchMenu = async () => {
         try {
-            const response = await partnerAPI.restaurant.getMenu();
+            const response = await menuService.getMenu();
             if (response.success && response.data) {
                 LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
                 setMenuItems(response.data);
@@ -85,7 +86,7 @@ export default function MenuScreen() {
     const fetchCategories = async () => {
         try {
             setCategoriesLoading(true);
-            const response = await partnerAPI.restaurant.getCategories();
+            const response = await menuService.getCategories();
             if (response.success && response.data) {
                 setCategories(response.data);
             }
@@ -109,7 +110,7 @@ export default function MenuScreen() {
     const handleToggleAvailability = async (itemId: string, currentStatus: boolean) => {
         setTogglingId(itemId);
         try {
-            const response = await partnerAPI.restaurant.updateMenuItemStatus(itemId, !currentStatus);
+            const response = await menuService.updateAvailability(itemId, !currentStatus);
             if (response.success) {
                 LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
                 setMenuItems(prev => prev.map(item =>
@@ -151,13 +152,36 @@ export default function MenuScreen() {
             return;
         }
 
-        LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
-        setMenuItems(prev => prev.map(item =>
-            item.food_item_id === editingItem.food_item_id
-                ? { ...item, name: newName, price: newPrice, image_url: editModalFormData.image_url }
-                : item
-        ));
-        closeEditModal();
+        // Persist to backend (optimistic UI update after success)
+        (async () => {
+            try {
+                const response = await menuService.updateMenuItem(editingItem.food_item_id, {
+                    name: newName,
+                    price: newPrice,
+                    image_url: editModalFormData.image_url || undefined,
+                });
+
+                if (response.success) {
+                    LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
+                    setMenuItems(prev => prev.map(item =>
+                        item.food_item_id === editingItem.food_item_id
+                            ? {
+                                ...item,
+                                ...response.data,
+                                name: response.data?.name ?? newName,
+                                price: response.data?.price ?? newPrice,
+                                image_url: editModalFormData.image_url,
+                            }
+                            : item
+                    ));
+                    closeEditModal();
+                } else {
+                    Alert.alert(t('error'), response.error || t('failed_update_status'));
+                }
+            } catch (error) {
+                Alert.alert(t('error'), t('unexpected_error'));
+            }
+        })();
     };
 
     // --- DELETE ITEM HANDLER ---
@@ -177,9 +201,7 @@ export default function MenuScreen() {
                             setMenuItems(prev => prev.filter(i => i.food_item_id !== item.food_item_id));
 
                             // 2. Actual API Call
-                            if (partnerAPI.restaurant.deleteMenuItem) {
-                                await partnerAPI.restaurant.deleteMenuItem(item.food_item_id);
-                            }
+                            await menuService.deleteMenuItem(item.food_item_id);
                         } catch (error) {
                             console.error("Delete failed", error);
                             // Only fetch menu if it failed, to restore item
@@ -232,33 +254,13 @@ export default function MenuScreen() {
                 is_veg: newModalFormData.is_veg
             };
 
-            const response = await partnerAPI.restaurant.createMenuItem(newItemData);
+            const response = await menuService.createMenuItem(newItemData);
 
             if (response.success) {
                 Alert.alert(t('success'), t('item_added_successfully'));
 
-                // --- FIX: LOCAL UPDATE & UNIQUE KEY GENERATION ---
-                // We create a unique ID by combining the response ID (or random) with a timestamp
-                // to prevent the "same key" error if the API returns duplicate IDs.
-                const uniqueId = response.data?.food_item_id
-                    ? `${response.data.food_item_id}_${Date.now()}`
-                    : Date.now().toString();
-
-                const createdItem: ExtendedFoodItem = {
-                    food_item_id: uniqueId,
-                    name: newName,
-                    price: newPrice,
-                    description: description,
-                    category_id: newCategoryId,
-                    is_available: true,
-                    is_veg: newModalFormData.is_veg,
-                    image: image_url || '',
-                    image_url: image_url,
-                    is_popular: false
-                };
-
-                LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-                setMenuItems(prev => [...prev, createdItem]);
+                // Refetch to ensure consistent IDs/category names from backend
+                await fetchMenu();
 
                 closeAddModal();
             } else {
@@ -336,7 +338,7 @@ export default function MenuScreen() {
     };
 
     const groupedItems = menuItems.reduce((acc: Record<string, ExtendedFoodItem[]>, item) => {
-        const category = item.category_id || t('uncategorized');
+        const category = item.category_name || item.category_id || t('uncategorized');
         if (!acc[category]) {
             acc[category] = [];
         }

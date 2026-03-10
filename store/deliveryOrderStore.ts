@@ -22,6 +22,7 @@ interface DeliveryOrderState {
 
     // Earnings
     earnings: EarningsSummary | null;
+    earningsPeriod: 'today' | 'week' | 'month';
 
     // UI State
     isLoading: boolean;
@@ -41,7 +42,7 @@ interface DeliveryOrderState {
         proofPhoto?: string
     ) => Promise<ApiResponse<DeliveryOrder>>;
     updateLocation: (orderId: string, lat: number, lng: number) => Promise<void>;
-    fetchEarnings: () => Promise<void>;
+    fetchEarnings: (period?: 'today' | 'week' | 'month') => Promise<void>;
     toggleOnlineStatus: () => void;
     setCurrentLocation: (lat: number, lng: number) => void;
     refreshAll: () => Promise<void>;
@@ -59,6 +60,7 @@ const initialState = {
     isOnline: false,
     currentLocation: null,
     earnings: null,
+    earningsPeriod: 'today' as const,
     isLoading: false,
     error: null,
     availableCount: 0,
@@ -275,12 +277,12 @@ export const useDeliveryOrderStore = create<DeliveryOrderState>()(
             },
 
             // Fetch earnings
-            fetchEarnings: async () => {
+            fetchEarnings: async (period = get().earningsPeriod) => {
                 try {
-                    const result = await deliveryOrderService.getEarnings();
+                    const result = await deliveryOrderService.getEarnings(period);
 
                     if (result.success && result.data) {
-                        set({ earnings: result.data });
+                        set({ earnings: result.data, earningsPeriod: period });
                     }
                 } catch (error) {
                     console.error('Failed to fetch earnings:', error);

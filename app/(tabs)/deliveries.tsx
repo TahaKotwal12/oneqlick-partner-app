@@ -248,8 +248,8 @@ export default function DeliveryDashboardScreen() {
                 style={styles.statsContainer}
                 contentContainerStyle={styles.statsContent}
             >
-                {renderStatCard('cash', "Today's Earnings", `₹${earnings?.today_earnings || 0}`, '#4CAF50')}
-                {renderStatCard('check-circle', 'Completed', `${earnings?.completed_today || 0}`, '#2196F3')}
+                {renderStatCard('cash', "Today's Earnings", `₹${earnings?.total_earnings || 0}`, '#4CAF50')}
+                {renderStatCard('check-circle', 'Completed', `${earnings?.completed_deliveries || 0}`, '#2196F3')}
                 {renderStatCard('bike-fast', 'Active', `${activeDeliveries.length}`, '#FF9800')}
                 {renderStatCard('star', 'Rating', '4.8', '#FFD700')}
             </ScrollView>

@@ -72,13 +72,11 @@ export interface DeliveryOrder {
 }
 
 export interface EarningsSummary {
-    today_earnings: number;
-    week_earnings: number;
-    month_earnings: number;
-    total_deliveries: number;
-    completed_today: number;
-    pending_amount: number;
-    paid_amount: number;
+    total_earnings: number;
+    completed_deliveries: number;
+    avg_per_delivery: number;
+    earnings_by_date: Array<Record<string, any>>;
+    total_distance_km: number;
 }
 
 export interface ApiResponse<T> {
@@ -302,19 +300,23 @@ export const deliveryOrderService = {
      * Get earnings summary
      */
     async getEarnings(
-        startDate?: string,
-        endDate?: string
+        period: 'today' | 'week' | 'month' = 'today'
     ): Promise<ApiResponse<EarningsSummary>> {
         try {
-            let url = '/orders/delivery/earnings';
-            const params = new URLSearchParams();
+            const now = new Date();
+            const toDate = now.toISOString();
+            const from = new Date(now);
 
-            if (startDate) params.append('start_date', startDate);
-            if (endDate) params.append('end_date', endDate);
-
-            if (params.toString()) {
-                url += `?${params.toString()}`;
+            if (period === 'today') {
+                from.setHours(0, 0, 0, 0);
+            } else if (period === 'week') {
+                from.setDate(from.getDate() - 7);
+            } else {
+                from.setDate(from.getDate() - 30);
             }
+
+            const fromDate = from.toISOString();
+            const url = `/orders/delivery/earnings?from_date=${encodeURIComponent(fromDate)}&to_date=${encodeURIComponent(toDate)}`;
 
             const response = await apiRequest<EarningsSummary>(url);
             return response;
